@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小学数学知识图谱 · 1~6年级</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#1d2129; --sub:#6b7280; --line:#e5e7eb;
+    --num:#3d6fe8; --num-bg:#eef3fe;
+    --geo:#e07b2a; --geo-bg:#fdf1e6;
+    --stat:#2e9e5b; --stat-bg:#e9f7ef;
+    --prac:#8a63d2; --prac-bg:#f3eefc;
+    --up:#d9820b; --down:#2f6bff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden;
+  }
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    background:rgba(255,255,255,.92); backdrop-filter:saturate(1.4) blur(10px);
+    border-bottom:1px solid var(--line); padding:10px 18px 9px;
+  }
+  .hrow{display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;}
+  h1{font-size:17px; margin:0; letter-spacing:.5px;}
+  .sub{font-size:12px; color:var(--sub); margin:3px 0 0;}
+  .progress-block{margin-left:auto; text-align:right; min-width:150px;}
+  .ptext{font-size:12px; color:var(--sub); display:flex; align-items:center; gap:8px; justify-content:flex-end;}
+  #pl{font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600;}
+  .linkbtn{border:0; background:none; color:#9aa1ac; font-size:11px; cursor:pointer; padding:0;}
+  .linkbtn:hover{color:#e05252;}
+  .pbar{width:140px; height:5px; background:#eceef2; border-radius:3px; margin-top:5px; overflow:hidden; margin-left:auto;}
+  #pfill{height:100%; width:0%; background:linear-gradient(90deg,#37b26f,#34c759); border-radius:3px; transition:width .3s;}
+  .controls{display:flex; align-items:center; gap:10px; margin-top:9px; flex-wrap:wrap;}
+  .searchbox{
+    display:flex; align-items:center; gap:6px; background:#f1f2f5; border:1px solid transparent;
+    border-radius:8px; padding:5px 10px; min-width:230px;
+  }
+  .searchbox:focus-within{background:#fff; border-color:#c9d4ea;}
+  .searchbox svg{flex:none; opacity:.45;}
+  #q{border:0; outline:0; background:none; font-size:13px; width:170px; font-family:inherit;}
+  #qcount{font-size:11px; color:var(--sub); white-space:nowrap;}
+  .chips{display:flex; gap:5px; flex-wrap:wrap;}
+  .chip{
+    font-size:12px; padding:4.5px 11px; border-radius:999px; cursor:pointer; user-select:none;
+    background:#fff; border:1px solid var(--line); color:#3c4350; transition:all .15s; display:flex; align-items:center; gap:5px;
+  }
+  .chip:hover{border-color:#c4cad4;}
+  .chip.on{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .chip .cdot{width:8px;height:8px;border-radius:50%; flex:none;}
+  .chip.on .cdot{outline:2px solid rgba(255,255,255,.35);}
+  main{position:fixed; inset:0; top:0;}
+  #graph{width:100%; height:100%; display:block; touch-action:none; cursor:grab;}
+  #graph.panning{cursor:grabbing;}
+  #hint{
+    position:absolute; top:118px; left:16px; z-index:5; pointer-events:none;
+    font-size:12px; color:#5b6270; background:rgba(255,255,255,.85); border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px; backdrop-filter:blur(6px);
+  }
+  .zoombtns{position:absolute; left:14px; bottom:16px; z-index:5; display:flex; flex-direction:column; gap:6px;}
+  .zoombtns button{
+    width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:#fff;
+    font-size:16px; color:#3c4350; cursor:pointer; box-shadow:0 1px 4px rgba(20,25,40,.08);
+  }
+  .zoombtns button:hover{background:#f4f5f8;}
+  /* ---------- SVG graph ---------- */
+  .edge{fill:none; stroke:#c9d1dd; stroke-width:1.3; opacity:.5; transition:opacity .25s, stroke .25s, stroke-width .25s;}
+  .edge.dim{opacity:.05;}
+  .edge.fade{opacity:.05;}
+  .edge.up{stroke:var(--up); stroke-width:2.4; opacity:.95;}
+  .edge.down{stroke:var(--down); stroke-width:2.2; opacity:.92;}
+  .node{cursor:pointer; transition:opacity .25s;}
+  .node rect{transition:stroke-width .15s, filter .15s;}
+  .node.dim{opacity:.1;}
+  .node.fade{opacity:.2;}
+  .node.up, .node.down{opacity:1;}
+  .node.sel rect{stroke-width:2.6; filter:drop-shadow(0 2px 6px rgba(29,33,41,.22));}
+  .node text{font-family:inherit; pointer-events:none;}
+  .nlabel{fill:#22262e;}
+  .band{fill:#e9ecf1;}
+  .bandtxt{fill:#575e6b; font-size:14px; font-weight:600; letter-spacing:1px;}
+  .semtxt{fill:#8a919e; font-size:11px;}
+  .stripe{fill:#f7f9fc;}
+  /* ---------- detail panel ---------- */
+  #panel{
+    position:fixed; top:0; right:0; bottom:0; width:min(348px,92vw); z-index:30;
+    background:#fff; border-left:1px solid var(--line); box-shadow:-8px 0 30px rgba(20,25,40,.08);
+    transform:translateX(105%); transition:transform .28s cubic-bezier(.3,.8,.3,1);
+    padding:20px 22px 26px; overflow-y:auto;
+  }
+  #panel.open{transform:translateX(0);}
+  #pclose{
+    position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%;
+    border:0; background:#f1f2f5; color:#5b6270; font-size:13px; cursor:pointer;
+  }
+  #pclose:hover{background:#e6e8ee;}
+  #ptags{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:9px; padding-right:34px;}
+  .tag{font-size:11px; padding:3px 9px; border-radius:6px; font-weight:500;}
+  #pname{font-size:20px; margin:2px 0 10px; letter-spacing:.3px; padding-right:10px;}
+  #pdesc{font-size:13.5px; line-height:1.75; color:#3a4150; margin:0 0 14px;}
+  .tipbox{
+    background:#fdf6e3; border:1px solid #f0e3bb; border-radius:10px;
+    padding:10px 13px; font-size:12.5px; line-height:1.7; color:#6d5b1e; margin:0 0 16px;
+  }
+  .tipbox b{color:#8a6d1a;}
+  .sec{margin-bottom:15px;}
+  .sec h3{
+    font-size:12px; margin:0 0 8px; color:#5b6270; font-weight:600;
+    display:flex; align-items:center; gap:6px; letter-spacing:.5px;
+  }
+  .dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .dot.up{background:var(--up);} .dot.down{background:var(--down);}
+  .chiplist{display:flex; flex-wrap:wrap; gap:6px;}
+  .kchip{
+    display:flex; align-items:center; gap:6px; font-size:12px; padding:5px 10px;
+    background:#f6f7f9; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+  }
+  .kchip:hover{border-color:#b9c1ce; background:#fff;}
+  .kchip .kdot{width:7px; height:7px; border-radius:50%;}
+  .kchip small{color:#9aa1ac; font-size:10.5px;}
+  .none{font-size:12px; color:#9aa1ac;}
+  #plearn{
+    width:100%; padding:10px 0; border-radius:10px; font-size:13.5px; cursor:pointer;
+    border:1.5px solid #c9ead6; background:#f0faf4; color:#1f7a47; font-weight:600; margin-top:4px;
+    transition:all .15s;
+  }
+  #plearn:hover{background:#e4f5ec;}
+  #plearn.done{background:#2e9e5b; border-color:#2e9e5b; color:#fff;}
+  #punlearn{
+    width:100%; margin-top:8px; padding:8px 0; border-radius:10px; font-size:12px; cursor:pointer;
+    border:1px solid var(--line); background:none; color:#9aa1ac;
+  }
+  #punlearn:hover{color:#c0564f; border-color:#e5c2bf;}
+  .learnhint{font-size:11px; color:#9aa1ac; text-align:center; margin:8px 0 0;}
+  .panelnote{font-size:11px; color:#b0b6c0; margin-top:18px; line-height:1.6;}
+  /* ---------- 掌握小测 ---------- */
+  .quizhead{display:flex; justify-content:space-between; align-items:center; margin:2px 0 12px;}
+  .quizhead .qt{font-size:12px; color:#5b6270; font-weight:600; letter-spacing:.5px;}
+  .qprog{font-variant-numeric:tabular-nums; font-size:12px; color:#9aa1ac;}
+  .qtext{font-size:15.5px; line-height:1.6; margin:0 0 14px; color:var(--ink);}
+  .qopts{display:flex; flex-direction:column; gap:8px;}
+  .qopt{
+    padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#f8f9fb;
+    font-size:14px; cursor:pointer; text-align:left; font-family:inherit; color:var(--ink); transition:all .12s;
+  }
+  .qopt:hover{border-color:#b9c1ce; background:#fff;}
+  .qopt.right{background:#e9f7ef; border-color:#2e9e5b; color:#1f7a47; font-weight:600;}
+  .qopt.wrong{background:#fdeeee; border-color:#d9534f; color:#a12622;}
+  .qfeed{min-height:36px; display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .qfeed .ok{color:#1f7a47; font-size:13px; font-weight:600;}
+  .qfeed .no{color:#a12622; font-size:13px; font-weight:600;}
+  .retrybtn{border:0; background:var(--ink); color:#fff; border-radius:8px; padding:7px 14px; font-size:12.5px; cursor:pointer;}
+  .linkbtn.spot{color:#2e9e5b; font-weight:600;}
+  .linkbtn.spot:hover{color:#1f7a47;}
+  .spotfrom{font-size:11.5px; color:#9aa1ac; margin:-6px 0 12px;}
+  .warnbox{
+    margin:10px 0 2px; padding:9px 12px; border-radius:9px; font-size:12.5px; line-height:1.6;
+    background:#fdf3e7; border:1px solid #f5ddb8; color:#8a5a12;
+  }
+  .warnbox b{color:#c07a10;}
+  .warnflag{filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));}
+  .mini-toast{
+    position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:60;
+    background:#2a3038; color:#fff; font-size:13px; border-radius:9px; padding:9px 16px;
+    box-shadow:0 4px 14px rgba(29,33,41,.3); white-space:nowrap;
+  }
+  .passtoast{
+    position:absolute; top:14px; left:22px; right:22px; z-index:5;
+    background:#2e9e5b; color:#fff; border-radius:10px; padding:10px; text-align:center;
+    font-size:13.5px; font-weight:600; box-shadow:0 4px 14px rgba(46,158,91,.4);
+  }
+  /* ---------- 学习路线模式 ---------- */
+  #pmkroad{
+    width:100%; padding:10px 0; border-radius:10px; font-size:13px; cursor:pointer;
+    border:1.5px solid #eed9b0; background:#fdf6ea; color:#9a6b12; font-weight:600; margin-top:10px;
+    transition:all .15s; font-family:inherit;
+  }
+  #pmkroad:hover{background:#faf0da;}
+  .roadhead{font-size:13.5px; color:#7c5410; font-weight:600; line-height:1.6; margin:2px 0 8px;}
+  .roadmeta{font-size:11.5px; color:#9aa1ac; margin:0 0 10px;}
+  .roadlist{display:flex; flex-direction:column; gap:6px;}
+  .step{
+    display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:9px;
+    background:#f8f9fb; border:1px solid var(--line); cursor:pointer; transition:all .15s;
+  }
+  .step:hover{border-color:#e3c98f; background:#fffdf7;}
+  .step .sno{
+    width:22px; height:22px; border-radius:50%; flex:none; font-size:11.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; background:#f3e5c8; color:#8a6a1f;
+    font-variant-numeric:tabular-nums;
+  }
+  .step .sname{font-size:12.8px; color:#2a3038; flex:1; min-width:0;}
+  .step .sflag{font-size:10px; color:#b8860b; font-weight:700; white-space:nowrap;}
+  .step small{color:#9aa1ac; font-size:10.5px; white-space:nowrap;}
+  .step.now{border-color:#e0a92e; background:#fff8e9; box-shadow:0 0 0 2px rgba(224,169,46,.15);}
+  .step.now .sno{background:#e0a92e; color:#fff;}
+  .step.target{border-style:dashed; border-color:#d9a13c; border-width:1.5px;}
+  .step.target .sno{background:var(--ink); color:#fff;}
+  #pexitroad{
+    width:100%; padding:8px 0; border-radius:9px; font-size:12px; cursor:pointer; margin-top:10px;
+    border:1px solid var(--line); background:#fff; color:#6b7280; font-family:inherit;
+  }
+  #pexitroad:hover{background:#f4f5f8;}
+  .node.onroad{opacity:1;}
+  .node.onroad rect{stroke-width:2.1; filter:drop-shadow(0 2px 6px rgba(29,33,41,.18));}
+  .node.onroad.sel rect{stroke-width:2.6;}
+  .edge.onroad{stroke:var(--up); stroke-width:2.3; opacity:.92;}
+  @media (max-width:720px){
+    #panel{top:auto; height:52vh; width:100%; border-left:0; border-top:1px solid var(--line);}
+    #hint{display:none;}
+    .searchbox{min-width:0; flex:1;}
+    #q{width:100%;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div>
+      <h1>小学数学知识图谱</h1>
+      <p class="sub" id="subtitle">人教版 · 一至六年级 · 加载中…</p>
+    </div>
+    <div class="progress-block">
+      <div class="ptext"><span id="pl">已掌握 0 / 0</span><button class="linkbtn" id="reset">清空</button><button class="linkbtn spot" id="pspot">抽查</button></div>
+      <div class="pbar"><div id="pfill"></div></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="searchbox">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3c4350" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" placeholder="搜索知识点：分数、圆、方程…" autocomplete="off">
+      <span id="qcount"></span>
+    </div>
+    <div class="chips" id="gradeChips"></div>
+    <div class="chips" id="domainChips"></div>
+  </div>
+</header>
+
+<main>
+  <div id="hint">点击知识点看「来路 / 去路」 · 小测 3 题全对才算掌握 · 右上「抽查」检验真会不会 · 滚轮缩放 · 拖动平移</div>
+  <div class="zoombtns">
+    <button id="zin" title="放大">＋</button>
+    <button id="zout" title="缩小">－</button>
+    <button id="zfit" title="适配全图">⤢</button>
+  </div>
+  <svg id="graph"></svg>
+</main>
+
+<aside id="panel">
+  <button id="pclose" title="关闭">✕</button>
+  <div id="ptags"></div>
+  <h2 id="pname"></h2>
+  <div id="pdetails">
+    <p id="pdesc"></p>
+    <div id="ptip" class="tipbox" style="display:none"></div>
+    <div class="sec"><h3><span class="dot up"></span>先要会的（来路）</h3><div id="ppre" class="chiplist"></div></div>
+    <div class="sec"><h3><span class="dot down"></span>接着会学（去路）</h3><div id="pnext" class="chiplist"></div></div>
+    <div id="pwarn" class="warnbox" style="display:none"></div>
+    <button id="plearn">开始小测 · 3 题全对才算掌握</button>
+    <button id="punlearn" style="display:none">取消掌握（直接取消勾，不用测）</button>
+    <p class="learnhint">3 题一轮、全对才算掌握，错 1 题整轮重来 · 图上双击知识点可快速进入小测</p>
+  </div>
+  <div id="quizbox" style="display:none"></div>
+  <div class="sec" id="proadsec" style="display:none">
+    <h3><span class="dot up"></span>学习路线</h3>
+    <button id="pmkroad">列出要先补的知识 →</button>
+  </div>
+  <div id="roadbox" style="display:none"></div>
+  <p class="panelnote">依据人教版教材（义务教育课程标准）单元顺序整理，供学习参考。</p>
+</aside>
+
+<script>
+'use strict';
+/* ============ 数据 ============ */
+var DOM = {
+  num:{name:'数与代数', c:'var(--num)', bg:'var(--num-bg)'},
+  geo:{name:'图形与几何', c:'var(--geo)', bg:'var(--geo-bg)'},
+  stat:{name:'统计与概率', c:'var(--stat)', bg:'var(--stat-bg)'},
+  prac:{name:'综合与实践', c:'var(--prac)', bg:'var(--prac-bg)'}
+};
+var SEMN = ['一上','一下','二上','二下','三上','三下','四上','四下','五上','五下','六上','六下'];
+var SEMF = ['一年级上册','一年级下册','二年级上册','二年级下册','三年级上册','三年级下册','四年级上册','四年级下册','五年级上册','五年级下册','六年级上册','六年级下册'];
+var GRADES = ['一年级','二年级','三年级','四年级','五年级','六年级'];
+
+/* i=id n=名称 s=学期(0~11) d=领域 x=描述 t=要点(可选) p=前置知识 */
+var N = [
+ {i:'shushu', n:'数一数·比多少', s:0, d:'num', desc:'把物体一个一个地数出来，比谁多、谁少、谁同样多——所有数学的起点。', t:'数数时用手指点一个数一个，做到不重不漏。', p:[]},
+ {i:'ren15', n:'1~5的认识和加减法', s:0, d:'num', desc:'会读、会写 1~5，理解数的分与合，会算 5 以内的加法和减法。', p:['shushu']},
+ {i:'tu01', n:'认识图形(一)·立体', s:0, d:'geo', desc:'认识长方体、正方体、圆柱和球，能叫出名字、摸着分辨形状。', p:[]},
+ {i:'ren610', n:'6~10的认识和加减法', s:0, d:'num', desc:'把数扩展到 10，掌握 10 以内的加减法，体会“凑成十”的思想。', p:['ren15']},
+ {i:'ren1120', n:'11~20各数的认识', s:0, d:'num', desc:'认识十位和个位，知道 10 个一是 1 个十——数位的起点。', t:'写数时：几个十写在十位，几个一写在个位。', p:['ren610']},
+ {i:'zhongbiao', n:'认识钟表', s:0, d:'num', desc:'认识整时和半时，分清钟面上的时针和分针。', p:[]},
+ {i:'jinwei', n:'20以内的进位加法', s:0, d:'num', desc:'用凑十法计算 20 以内进位加法，口算要又快又准。', t:'凑十法：看大数，拆小数，凑成十，加剩数。如 9+4 → 9+1+3=13。', p:['ren610','ren1120']},
+
+ {i:'tuiwei', n:'20以内的退位减法', s:1, d:'num', desc:'用破十法、想加算减算 20 以内的退位减法。', t:'破十法：13-9 → 先算 10-9=1，再算 1+3=4。', p:['jinwei']},
+ {i:'pingmian', n:'认识图形(二)·平面', s:1, d:'geo', desc:'认识长方形、正方形、三角形、圆和平行四边形，会辨认和拼组图形。', p:['tu01']},
+ {i:'fenlei', n:'分类与整理', s:1, d:'stat', desc:'按不同标准给事物分类、整理——统计的起点。', p:['shushu']},
+ {i:'ren100', n:'100以内数的认识', s:1, d:'num', desc:'会数、读、写 100 以内的数，理解几个十和几个一。', p:['ren1120']},
+ {i:'renminbi', n:'认识人民币', s:1, d:'num', desc:'认识元、角、分，会简单的兑换和购物计算。', t:'1元=10角，1角=10分。', p:['ren100']},
+ {i:'jf100a', n:'100以内加减法(一)', s:1, d:'num', desc:'口算两位数加、减整十数和一位数，为笔算做准备。', p:['ren100','tuiwei']},
+ {i:'guilv', n:'找规律', s:1, d:'prac', desc:'发现图形和数的简单排列规律，会接着画、接着填。', p:['fenlei']},
+
+ {i:'changdu', n:'长度单位', s:2, d:'geo', desc:'认识厘米和米，会用尺子量线段，建立长度的感觉。', t:'1米=100厘米。量长度：尺的 0 刻度对准起点。', p:['pingmian']},
+ {i:'jf100b', n:'100以内加减法(二)', s:2, d:'num', desc:'学会加减法竖式（笔算），这是所有笔算的地基。', t:'笔算三件事：数位对齐，从个位算起，满十进一、退一当十。', p:['jf100a']},
+ {i:'jiao', n:'角的初步认识', s:2, d:'geo', desc:'认识角和角的各部分名称，认识直角、锐角、钝角。', p:['pingmian']},
+ {i:'cheng1', n:'表内乘法(一)', s:2, d:'num', desc:'理解乘法是“相同加数的加法”，背熟 2~6 的乘法口诀。', p:['ren610','jf100b']},
+ {i:'guancha1', n:'观察物体(一)', s:2, d:'geo', desc:'从前后左右不同位置观察物体，知道看到的形状可能不同。', p:['tu01']},
+ {i:'cheng2', n:'表内乘法(二)', s:2, d:'num', desc:'背熟 7~9 的乘法口诀，表内乘法全部通关。', t:'乘法口诀表是整个乘除法的地基，要背到脱口而出。', p:['cheng1']},
+ {i:'shijian', n:'认识时间', s:2, d:'num', desc:'会 5 分 5 分地认时间，知道 1 时=60 分。', p:['zhongbiao']},
+ {i:'dapei1', n:'数学广角·搭配(一)', s:2, d:'prac', desc:'最简单的排列组合：3 个数字能组成几个不同的两位数？', p:['guilv']},
+
+ {i:'shuju', n:'数据收集整理', s:3, d:'stat', desc:'用画“正”字、统计表来收集和整理数据。', p:['fenlei']},
+ {i:'chu1', n:'表内除法(一)', s:3, d:'num', desc:'理解平均分和除法的含义，会用 2~6 的口诀求商。', p:['cheng1']},
+ {i:'yundong1', n:'图形的运动(一)', s:3, d:'geo', desc:'初步认识对称、平移、旋转三种图形运动。', p:['pingmian']},
+ {i:'chu2', n:'表内除法(二)', s:3, d:'num', desc:'用 7~9 的口诀求商，表内除法全部通关。', p:['cheng2']},
+ {i:'hunhe', n:'混合运算', s:3, d:'num', desc:'掌握运算顺序：先乘除后加减，有括号先算括号里。', t:'同级从左往右；不同级先乘除后加减；括号最优先。', p:['jf100b','cheng2','chu1']},
+ {i:'youyu', n:'有余数的除法', s:3, d:'num', desc:'学会除法竖式和有余数的除法。', t:'余数一定比除数小。验算：商×除数+余数=被除数。', p:['chu2']},
+ {i:'wan', n:'万以内数的认识', s:3, d:'num', desc:'认识万以内的数和数位顺序表：个、十、百、千、万。', p:['ren100']},
+ {i:'keqianke', n:'克和千克', s:3, d:'num', desc:'认识质量单位克和千克，会看秤、估重量。', t:'1千克=1000克。两袋盐约 1 千克，一枚硬币约 1 克。', p:[]},
+ {i:'tuili', n:'数学广角·推理', s:3, d:'prac', desc:'用排除法和有序思考做简单推理：“不是……就是……”。', p:['dapei1']},
+
+ {i:'shifenmiao', n:'时、分、秒', s:4, d:'num', desc:'认识秒，知道 1分=60秒，会计算经过的时间。', p:['shijian']},
+ {i:'wanjf', n:'万以内的加减法', s:4, d:'num', desc:'笔算万以内的加减法，会估算和验算。', p:['jf100b','wan']},
+ {i:'celiang', n:'测量', s:4, d:'geo', desc:'认识毫米、分米、千米和吨，会单位换算。', t:'1米=10分米=100厘米=1000毫米；1千米=1000米；1吨=1000千克。', p:['changdu','keqianke']},
+ {i:'bei', n:'倍的认识', s:4, d:'num', desc:'理解“倍”：一个数里包含几个另一个数。', p:['cheng2']},
+ {i:'duowei', n:'多位数乘一位数', s:4, d:'num', desc:'笔算多位数乘一位数，包括中间有 0、末尾有 0 的情况。', p:['cheng2','jf100b']},
+ {i:'shuzibianma', n:'数字编码', s:4, d:'prac', desc:'身份证号、邮政编码里的数学：用数字编码表示信息。', p:['wan']},
+ {i:'changzheng', n:'长方形和正方形', s:4, d:'geo', desc:'掌握长方形、正方形的特征，学会计算周长。', t:'长方形周长=(长+宽)×2；正方形周长=边长×4。', p:['pingmian','changdu']},
+ {i:'fen1', n:'分数的初步认识', s:4, d:'num', desc:'认识几分之一和几分之几，会比较大小、做简单的分数加减。', p:['chu1','youyu']},
+ {i:'jihe', n:'数学广角·集合', s:4, d:'prac', desc:'用集合圈解决“既……又……”的重叠问题。', p:['tuili']},
+
+ {i:'fangxiang1', n:'位置与方向(一)', s:5, d:'geo', desc:'认识东、南、西、北和八个方向，会看简单的路线图。', p:['guancha1']},
+ {i:'chuweishu', n:'除数是一位数的除法', s:5, d:'num', desc:'笔算除数是一位数的除法，包括商中间、末尾有 0 的除法。', p:['youyu','chu2']},
+ {i:'fushi', n:'复式统计表', s:5, d:'stat', desc:'把几个统计表合并成复式统计表，方便比较。', p:['shuju']},
+ {i:'liangwei', n:'两位数乘两位数', s:5, d:'num', desc:'笔算两位数乘两位数——乘法计算的关键一关。', p:['duowei']},
+ {i:'mianji', n:'面积', s:5, d:'geo', desc:'理解面积的含义，认识面积单位，会算长方形、正方形的面积。', t:'长方形面积=长×宽；正方形面积=边长×边长。1平方米=100平方分米=10000平方厘米。', p:['changzheng','celiang']},
+ {i:'nianyuri', n:'年、月、日', s:5, d:'num', desc:'认识年月日、平年闰年，学会 24 时计时法。', t:'大月(31天)：1、3、5、7、8、10、12月；平年2月28天，闰年29天。', p:['shifenmiao']},
+ {i:'xiao1', n:'小数的初步认识', s:5, d:'num', desc:'结合人民币和米尺认识小数，会读一位、两位小数。', p:['renminbi','fen1']},
+ {i:'dapei2', n:'数学广角·搭配(二)', s:5, d:'prac', desc:'稍复杂的排列组合：衣服搭配、路线问题。', p:['dapei1']},
+
+ {i:'dashu', n:'大数的认识', s:6, d:'num', desc:'认识亿以内和亿以上的数，会读、写、改写和求近似数。', t:'四位一级来分级：个级、万级、亿级，每一级都按个级的方法读。', p:['wan','wanjf']},
+ {i:'gongqing', n:'公顷和平方千米', s:6, d:'geo', desc:'认识土地面积单位，感受 1 公顷有多大。', t:'1公顷=10000平方米；1平方千米=100公顷。', p:['mianji']},
+ {i:'jiaoduliang', n:'角的度量', s:6, d:'geo', desc:'认识量角器和角的单位“度”，会量角、画角，会给角分类。', t:'量角：中心对顶点，0 线对一边，从 0 刻度那一圈读数。', p:['jiao']},
+ {i:'sanwei', n:'三位数乘两位数', s:6, d:'num', desc:'整数乘法的收官：笔算三位数乘两位数，掌握积的变化规律。', p:['liangwei','duowei']},
+ {i:'pingxing', n:'平行四边形和梯形', s:6, d:'geo', desc:'认识垂直与平行、平行四边形和梯形，会画高。', t:'同一平面内不相交的两条直线互相平行；梯形只有一组对边平行。', p:['jiaoduliang']},
+ {i:'chuweishu2', n:'除数是两位数的除法', s:6, d:'num', desc:'掌握试商和调商的方法——整数除法的收官。', t:'四舍五入来试商：商大了调小，商小了调大。', p:['chuweishu','liangwei']},
+ {i:'tiaoxing', n:'条形统计图', s:6, d:'stat', desc:'认识条形统计图，会用一格表示多个单位。', p:['shuju','fushi']},
+ {i:'youhua', n:'数学广角·优化', s:6, d:'prac', desc:'烙饼问题、沏茶问题：怎样安排最省时间？', p:['shifenmiao']},
+
+ {i:'sze', n:'四则运算', s:7, d:'num', desc:'系统掌握四则运算的意义和顺序，认识中括号。', t:'加减是第一级运算，乘除是第二级运算；0 不能作除数。', p:['hunhe','cheng2','chu2']},
+ {i:'guancha2', n:'观察物体(二)', s:7, d:'geo', desc:'从正面、上面、左面观察立体图形，画出看到的形状。', p:['guancha1']},
+ {i:'dinglu', n:'运算定律', s:7, d:'num', desc:'加法交换律、结合律，乘法交换律、结合律、分配律——简便计算的核心。', t:'乘法分配律：(a+b)×c=a×c+b×c，正着用、反着用都要会。', p:['sze','cheng2']},
+ {i:'xiao2', n:'小数的意义和性质', s:7, d:'num', desc:'理解小数的意义和数位，会比较大小，会移动小数点。', t:'小数点右移一位×10，右移两位×100；向左移则除以。', p:['xiao1']},
+ {i:'sanjiao', n:'三角形', s:7, d:'geo', desc:'认识三角形的特性和分类，掌握内角和，会画高。', t:'三角形内角和是 180°；任意两边之和大于第三边。', p:['jiaoduliang','pingmian']},
+ {i:'xiaojf', n:'小数的加法和减法', s:7, d:'num', desc:'小数加减法：小数点对齐，再按整数加减法计算。', p:['xiao2','jf100b']},
+ {i:'yundong2', n:'图形的运动(二)', s:7, d:'geo', desc:'会画轴对称图形的另一半，会在方格纸上平移图形。', p:['yundong1']},
+ {i:'pingjun', n:'平均数', s:7, d:'stat', desc:'理解平均数的意义，认识复式条形统计图。', t:'平均数=总数÷份数，它代表整体水平：“移多补少”。', p:['shuju','chuweishu2']},
+ {i:'jitu', n:'数学广角·鸡兔同笼', s:7, d:'prac', desc:'用列表法、假设法解鸡兔同笼问题。', t:'假设法：假设全是鸡，多算出来的脚就是兔子“补”上的。', p:['sze']},
+
+ {i:'xiaocheng', n:'小数乘法', s:8, d:'num', desc:'会算小数乘法：先按整数算，再点上小数点。', t:'两个因数一共有几位小数，积就点几位小数（不够就补 0）。', p:['xiaojf','sanwei']},
+ {i:'shudui', n:'位置·数对', s:8, d:'geo', desc:'用数对（列,行）表示位置——坐标思想的起点。', t:'数对(3,5)：先数第几列，再数第几行。', p:['fangxiang1']},
+ {i:'xiaochu', n:'小数除法', s:8, d:'num', desc:'会算小数除法，认识循环小数，会求近似值。', t:'商不变的规律：除数变成整数，被除数的小数点同时移。', p:['xiaocheng','chuweishu2']},
+ {i:'keneng', n:'可能性', s:8, d:'stat', desc:'体验事件发生的可能性：可能、一定、不可能。', p:['shuju']},
+ {i:'fangcheng', n:'简易方程', s:8, d:'num', desc:'用字母表示数，认识方程，会用等式的性质解方程。', t:'含有未知数的等式叫方程。解方程：两边同时加、减、乘、除。', p:['sze','xiaojf']},
+ {i:'duobian', n:'多边形的面积', s:8, d:'geo', desc:'推导并掌握平行四边形、三角形、梯形的面积公式。', t:'平行四边形=底×高；三角形=底×高÷2；梯形=(上底+下底)×高÷2。', p:['mianji','pingxing','sanjiao']},
+ {i:'zhishu', n:'数学广角·植树问题', s:8, d:'prac', desc:'两端都栽、只栽一端、两端不栽——间隔数与棵数的关系。', p:['chuweishu2']},
+
+ {i:'guancha3', n:'观察物体(三)', s:9, d:'geo', desc:'根据从一个方向看到的图形，拼搭出可能的立体图形。', p:['guancha2']},
+ {i:'yinshu', n:'因数与倍数', s:9, d:'num', desc:'掌握因数、倍数、质数、合数，以及 2、3、5 的倍数特征。', t:'2 的倍数末尾是偶数；5 的倍数末尾是 0 或 5；3 的倍数各位数字之和是 3 的倍数。', p:['cheng2','chu2']},
+ {i:'changfangti', n:'长方体和正方体', s:9, d:'geo', desc:'会算长方体、正方体的棱长总和、表面积和体积。', t:'长方体体积=长×宽×高，也=底面积×高；1立方米=1000立方分米。', p:['tu01','mianji']},
+ {i:'fen2', n:'分数的意义和性质', s:9, d:'num', desc:'理解分数的意义、分数与除法的关系，会约分和通分。', t:'分数的基本性质：分子分母同乘或同除一个不为 0 的数，大小不变。', p:['fen1','yinshu']},
+ {i:'fenjf', n:'分数的加法和减法', s:9, d:'num', desc:'异分母分数加减法：先通分，再加减。', t:'通分时用最小公倍数作公分母最简便。', p:['fen2']},
+ {i:'yundong3', n:'图形的运动(三)', s:9, d:'geo', desc:'在方格纸上把图形旋转 90°，欣赏旋转形成的图案。', p:['yundong2','jiaoduliang']},
+ {i:'zhexian', n:'折线统计图', s:9, d:'stat', desc:'认识折线统计图，用它看出数量的增减变化趋势。', p:['tiaoxing']},
+ {i:'zhaocipin', n:'数学广角·找次品', s:9, d:'prac', desc:'用天平找次品：尽量平均分成 3 份，称的次数最少。', p:['tuili']},
+
+ {i:'fencheng', n:'分数乘法', s:10, d:'num', desc:'理解分数乘法的意义，会算分数乘整数、分数乘分数。', t:'分子乘分子，分母乘分母；能约分的先约分再相乘。', p:['fen2','fenjf']},
+ {i:'fangxiang2', n:'位置与方向(二)', s:10, d:'geo', desc:'用“北偏东 30°”这样的方式描述方向和距离。', p:['fangxiang1','jiaoduliang']},
+ {i:'fenchu', n:'分数除法', s:10, d:'num', desc:'会算分数除法，会解决分数应用题。', t:'除以一个不为 0 的数，等于乘这个数的倒数。', p:['fencheng','fen2']},
+ {i:'bi', n:'比', s:10, d:'num', desc:'理解比的意义、比与分数和除法的关系，会化简比。', t:'比的基本性质：前项、后项同乘或同除相同的数（0除外），比值不变。', p:['fenchu','chuweishu2']},
+ {i:'yuan', n:'圆', s:10, d:'geo', desc:'认识圆的特征，理解圆周率，会算圆的周长和面积。', t:'C=πd=2πr；S=πr²。π≈3.14，是一个无限不循环小数。', p:['changzheng','jiaoduliang','duobian']},
+ {i:'baifen', n:'百分数(一)', s:10, d:'num', desc:'理解百分数的意义，会与分数、小数互化，解决百分数问题。', t:'百分数表示一个数是另一个数的百分之几，只表示倍比关系。', p:['fen2','fenchu']},
+ {i:'shanxing', n:'扇形统计图', s:10, d:'stat', desc:'认识扇形统计图：整个圆代表总体，扇形代表各部分占比。', p:['baifen','yuan']},
+ {i:'shuyuxing', n:'数学广角·数与形', s:10, d:'prac', desc:'数与形的规律：1+3+5+7+… 正好排成正方形（平方数）。', p:['guilv']},
+
+ {i:'fushu', n:'负数', s:11, d:'num', desc:'认识负数，用正、负数表示相反意义的量。', t:'0 既不是正数也不是负数，它是正负数的分界点。', p:['dashu']},
+ {i:'baifen2', n:'百分数(二)', s:11, d:'num', desc:'折扣、成数、税率、利率——生活中的百分数。', t:'几折就是十分之几：八折=80%。利息=本金×利率×时间。', p:['baifen']},
+ {i:'yuanzhu', n:'圆柱与圆锥', s:11, d:'geo', desc:'会算圆柱的侧面积、表面积和体积，以及圆锥的体积。', t:'圆柱体积=底面积×高；圆锥体积=底面积×高÷3，是等底等高圆柱的三分之一。', p:['yuan','changfangti']},
+ {i:'bili', n:'比例', s:11, d:'num', desc:'理解比例的意义和基本性质，认识正比例、反比例和比例尺。', t:'内项之积=外项之积。商一定成正比例，积一定成反比例。', p:['bi','fenchu']},
+ {i:'gechao', n:'数学广角·鸽巢问题', s:11, d:'prac', desc:'鸽巢原理：4 支笔放进 3 个笔筒，总有一个笔筒至少有 2 支。', p:['keneng']},
+ {i:'zongfx', n:'整理与复习', s:11, d:'prac', desc:'把六年所学串成一张网：数与代数、图形几何、统计概率全线贯通。', p:['dashu','fen2','xiao2','yuan','bili']}
+];
+
+/* ============ 掌握小测题库 ============ */
+/* QZ：固定题库（88 个知识点 × 3 题）；QGEN：口算类随机出题（防背答案） */
+/* 格式：{q:题面, o:选项, a:正确答案下标} —— 渲染时选项会重新打乱 */
+var QZ = {
+ shushu:[{q:'○○○○ △△△：圆和三角形谁多？',o:['圆多','三角形多','同样多'],a:0},
+  {q:'数一数：🍎🍎🍎 一共有几个？',o:['3个','2个','4个'],a:0},
+  {q:'○○○ △△△△：○比△少几个？',o:['少1个','少2个','多1个'],a:0}],
+ tu01:[{q:'魔方是什么形状的？',o:['正方体','圆柱','球'],a:0},
+  {q:'易拉罐的形状接近哪种立体图形？',o:['圆柱','球','长方体'],a:0},
+  {q:'数学课本的形状接近哪种立体图形？',o:['长方体','球','圆柱'],a:0}],
+ ren1120:[{q:'1个十和5个一合起来是多少？',o:['15','51','10'],a:0},
+  {q:'17里面有几个十和几个一？',o:['1个十和7个一','7个十和1个一','17个十'],a:0},
+  {q:'与19相邻的两个数是？',o:['18和20','17和18','19和20'],a:0}],
+ zhongbiao:[{q:'时针指着3，分针指着12，是几时？',o:['3时','12时','6时'],a:0},
+  {q:'分针指着6，时针刚走过5，是几时半？',o:['5时半','6时半','12时半'],a:0},
+  {q:'钟面上，又短又粗的针是？',o:['时针','分针','一样长'],a:0}],
+ pingmian:[{q:'红领巾的形状接近哪种平面图形？',o:['三角形','圆','长方形'],a:0},
+  {q:'硬币的正面向上看，是哪种图形？',o:['圆','正方形','三角形'],a:0},
+  {q:'四条边一样长、四个角一样大的图形是？',o:['正方形','长方形','三角形'],a:0}],
+ fenlei:[{q:'苹果、香蕉、白菜、梨——不是同一类的是？',o:['白菜','苹果','梨'],a:0},
+  {q:'铅笔、钢笔、尺子分成一组，因为它们都是？',o:['文具','食物','玩具'],a:0},
+  {q:'用画"正"字记录票数，一个"正"字代表几票？',o:['5票','4票','10票'],a:0}],
+ ren100:[{q:'5个十和6个一合起来是？',o:['56','65','506'],a:0},
+  {q:'59后面一个数是？',o:['60','58','50'],a:0},
+  {q:'100里面有几个十？',o:['10个','100个','5个'],a:0}],
+ renminbi:[{q:'1元等于几角？',o:['10角','5角','100角'],a:0},
+  {q:'一支铅笔5角，一块橡皮3角，一共多少钱？',o:['8角','8元','2角'],a:0},
+  {q:'1张10元可以换几张5元？',o:['2张','5张','10张'],a:0}],
+ jf100a:[{q:'口算：23+5=？',o:['28','73','23'],a:0},
+  {q:'口算：34+20=？',o:['54','36','74'],a:0},
+  {q:'口算：67−4=？',o:['63','27','23'],a:0}],
+ guilv:[{q:'○△○△○△……接着应该画什么？',o:['○','△','□'],a:0},
+  {q:'2、4、6、8、（　）',o:['10','9','12'],a:0},
+  {q:'1、3、5、7、（　）',o:['9','8','10'],a:0}],
+ changdu:[{q:'1米等于几厘米？',o:['100厘米','10厘米','1000厘米'],a:0},
+  {q:'量铅笔的长度，最合适的单位是？',o:['厘米','米','克'],a:0},
+  {q:'课桌高大约70（　）',o:['厘米','米','毫米'],a:0}],
+ jf100b:[{q:'笔算加减法竖式，要从哪一位算起？',o:['个位','十位','随便哪位'],a:0},
+  {q:'36+48=？',o:['84','74','82'],a:0},
+  {q:'62−27=？',o:['35','45','33'],a:0}],
+ jiao:[{q:'一个角有几个顶点、几条边？',o:['1个顶点2条边','2个顶点1条边','3个顶点3条边'],a:0},
+  {q:'三角板上有几个角？',o:['3个','2个','4个'],a:0},
+  {q:'直角三角板里最大的那个角是？',o:['直角','锐角','钝角'],a:0}],
+ cheng1:[{q:'3+3+3+3 改成乘法算式是？',o:['3×4','3+4','4+3'],a:0},
+  {q:'5×2=？',o:['10','7','25'],a:0},
+  {q:'乘法算式 4×3 读作？',o:['4乘3','43','3乘4'],a:0}],
+ guancha1:[{q:'不同的人站在不同位置看同一个物体，看到的形状？',o:['可能不同','一定相同','一定不同'],a:0},
+  {q:'从上面看一个杯子，看到的主要是？',o:['杯口（圆形）','杯子的侧面','杯底'],a:0},
+  {q:'小明站在汽车正前面，他看到的是汽车的？',o:['车头','车尾','车门'],a:0}],
+ shijian:[{q:'1时等于几分？',o:['60分','100分','30分'],a:0},
+  {q:'分针从12走到3，走了多少分？',o:['15分','3分','20分'],a:0},
+  {q:'8:05 读作？',o:['8时5分','5时8分','8时半'],a:0}],
+ dapei1:[{q:'用1、2、3组成两位数（每个数只用一次），能组成几个？',o:['6个','3个','9个'],a:0},
+  {q:'2件上衣、2条裤子，有几种穿法搭配？',o:['4种','2种','6种'],a:0},
+  {q:'3个小朋友排队照相，有几种排法？',o:['6种','3种','9种'],a:0}],
+ shuju:[{q:'记录数据时，画"正"字的好处是？',o:['一笔代表1，一个正字代表5，好数','写得好看','省纸'],a:0},
+  {q:'统计表能帮我们看清什么？',o:['每种数量的多少','天气预报','日期'],a:0},
+  {q:'全班投票选活动，用什么整理票数最方便？',o:['画"正"字记录','一个个背下来','猜一猜'],a:0}],
+ chu1:[{q:'12个苹果平均分给3个小朋友，每人几个？',o:['4个','3个','6个'],a:0},
+  {q:'12÷3=？',o:['4','3','36'],a:0},
+  {q:'除法算式 12÷3=4 读作？',o:['12除以3等于4','12除3等于4','3除以12等于4'],a:0}],
+ yundong1:[{q:'剪纸"囍"字对折后两边完全重合，这是？',o:['对称','平移','旋转'],a:0},
+  {q:'电梯上下移动，属于？',o:['平移','旋转','对称'],a:0},
+  {q:'风车转动，属于？',o:['旋转','平移','对称'],a:0}],
+ hunhe:[{q:'计算 3+4×2，先算什么？',o:['4×2','3+4','从左往右'],a:0},
+  {q:'(3+4)×2=？',o:['14','10','11'],a:0},
+  {q:'20−8÷2=？',o:['16','6','14'],a:0}],
+ youyu:[{q:'13÷4=？（商和余数）',o:['3余1','4余1','3余0'],a:0},
+  {q:'余数和除数比，谁大？',o:['余数一定比除数小','余数一定比除数大','一样大'],a:0},
+  {q:'22÷5=？',o:['4余2','4余4','5余2'],a:0}],
+ wan:[{q:'数位顺序表里，从右边起第三位是？',o:['百位','十位','千位'],a:0},
+  {q:'4050 读作？',o:['四千零五十','四千五十','四千零五零'],a:0},
+  {q:'最大的四位数是？',o:['9999','1000','99999'],a:0}],
+ keqianke:[{q:'1千克等于几克？',o:['1000克','100克','10克'],a:0},
+  {q:'一枚硬币大约重多少？',o:['1克','100克','1千克'],a:0},
+  {q:'一袋盐约重500克，两袋盐约重多少？',o:['1千克','500克','2千克'],a:0}],
+ tuili:[{q:'小红、小明、小刚赛跑：小红不是第一，小明不是第一也不是最后。谁是第一？',o:['小刚','小红','小明'],a:0},
+  {q:'盒子里只有红球和蓝球，摸出一个不是红的，它是？',o:['蓝球','红球','白球'],a:0},
+  {q:'三个数2、3、4，甲说：我拿的不是2，也不是3。甲拿的是？',o:['4','2','3'],a:0}],
+ shifenmiao:[{q:'1分等于几秒？',o:['60秒','100秒','30秒'],a:0},
+  {q:'跑50米用了大约10（　）',o:['秒','分','时'],a:0},
+  {q:'2时=？分',o:['120分','200分','60分'],a:0}],
+ wanjf:[{q:'笔算加减法，数位要？',o:['对齐','错开','随意'],a:0},
+  {q:'验算加法 345+274=619，可以用？',o:['619−274看是否等于345','再数一遍','619+274'],a:0},
+  {q:'估算 402+297，结果大约是？',o:['700','800','600'],a:0}],
+ celiang:[{q:'1千米等于几米？',o:['1000米','100米','10米'],a:0},
+  {q:'1吨等于几千克？',o:['1000千克','100千克','10千克'],a:0},
+  {q:'数学课本厚约7（　）',o:['毫米','厘米','分米'],a:0}],
+ bei:[{q:'6是3的几倍？',o:['2倍','3倍','18倍'],a:0},
+  {q:'5的3倍是多少？',o:['15','8','2'],a:0},
+  {q:'小明有4支笔，小红的支数是他的2倍，小红有几支？',o:['8支','6支','2支'],a:0}],
+ duowei:[{q:'23×3=？',o:['69','66','89'],a:0},
+  {q:'0×5=？',o:['0','5','50'],a:0},
+  {q:'250×4的积末尾有几个0？',o:['3个','2个','1个'],a:0}],
+ shuzibianma:[{q:'邮政编码和身份证号属于？',o:['数字编码','普通数字','算式'],a:0},
+  {q:'身份证号里能看出什么？',o:['出生日期','身高','考试成绩'],a:0},
+  {q:'给全班同学编号，最重要的是？',o:['每个编号唯一、有规律','数字越大越好','随便编'],a:0}],
+ changzheng:[{q:'长方形周长公式是？',o:['(长+宽)×2','长×宽','长+宽'],a:0},
+  {q:'边长5厘米的正方形，周长是？',o:['20厘米','10厘米','25厘米'],a:0},
+  {q:'长6厘米宽3厘米的长方形，周长是？',o:['18厘米','9厘米','24厘米'],a:0}],
+ fen1:[{q:'把一个月饼平均分成4份，每份是它的？',o:['四分之一','四分之四','三分之一'],a:0},
+  {q:'比较大小：1/3 ○ 1/5',o:['大于','小于','等于'],a:0},
+  {q:'3/4 里有几个 1/4？',o:['3个','4个','1个'],a:0}],
+ jihe:[{q:'参加语文组5人，数学组6人，两个组都参加的2人，一共几人？',o:['9人','11人','13人'],a:0},
+  {q:'重叠问题中，重复的部分要？',o:['只算一次','算两次','不算'],a:0},
+  {q:'韦恩图（集合圈）能帮我们看清？',o:['谁重复了','谁最高','谁最快'],a:0}],
+ fangxiang1:[{q:'太阳从哪个方向升起？',o:['东','西','南'],a:0},
+  {q:'面向北时，你的后面是？',o:['南','东','西'],a:0},
+  {q:'地图通常按什么方向绘制？',o:['上北下南左西右东','上南下北左东右西','上东下西'],a:0}],
+ chuweishu:[{q:'639÷3=？',o:['213','231','203'],a:0},
+  {q:'0÷8=？',o:['0','8','不能算'],a:0},
+  {q:'816÷4=？',o:['204','24','214'],a:0}],
+ fushi:[{q:'复式统计表和单式统计表比，好处是？',o:['便于比较各组数据','更省纸','数字更多'],a:0},
+  {q:'复式统计表的表头通常分几栏？',o:['3栏','1栏','10栏'],a:0},
+  {q:'把两张单式表合成复式表，数据要？',o:['一一对应不能错行','随便放','重新调查'],a:0}],
+ liangwei:[{q:'24×12=？',o:['288','248','282'],a:0},
+  {q:'笔算两位数乘两位数，第二步乘的是？',o:['十位上的数','个位上的数','整个数抄一遍'],a:0},
+  {q:'估算 39×21，大约是？',o:['800','400','8000'],a:0}],
+ mianji:[{q:'长8厘米宽5厘米的长方形，面积是？',o:['40平方厘米','26平方厘米','13平方厘米'],a:0},
+  {q:'正方形面积公式是？',o:['边长×边长','边长×4','边长+边长'],a:0},
+  {q:'1平方分米等于多少平方厘米？',o:['100','10','1000'],a:0}],
+ nianyuri:[{q:'一年中有几个大月（31天的月）？',o:['7个','6个','12个'],a:0},
+  {q:'平年2月有多少天？',o:['28天','29天','30天'],a:0},
+  {q:'上午9时用24时计时法表示是？',o:['9时','21时','19时'],a:0}],
+ xiao1:[{q:'3角写成小数是多少元？',o:['0.3元','0.03元','3元'],a:0},
+  {q:'5.7 读作？',o:['五点七','五七','五十七'],a:0},
+  {q:'1米3分米写成小数是多少米？',o:['1.3米','13米','0.13米'],a:0}],
+ dapei2:[{q:'3件上衣、2条裤子，有几种搭配？',o:['6种','5种','9种'],a:0},
+  {q:'用0、2、4组成没有重复数字的两位数，能组成几个？',o:['4个','6个','3个'],a:0},
+  {q:'搭配问题怎样数不重不漏？',o:['按顺序一一列举','凭感觉数','先数大数'],a:0}],
+ dashu:[{q:'读大数时，从右边起每几位分一级？',o:['4位','3位','5位'],a:0},
+  {q:'7080000 读作？',o:['七百零八万','七千零八十','七百万八千'],a:0},
+  {q:'把 98765 四舍五入到万位约是？',o:['10万','9万','98万'],a:0}],
+ gongqing:[{q:'1公顷等于多少平方米？',o:['10000','100','1000'],a:0},
+  {q:'1平方千米等于几公顷？',o:['100','10','1000'],a:0},
+  {q:'量一个操场的面积，用哪个单位合适？',o:['公顷','平方厘米','千米'],a:0}],
+ jiaoduliang:[{q:'角的大小与两边的什么有关？',o:['张开程度（叉开大小）','边的长短','顶点位置'],a:0},
+  {q:'一个直角是多少度？',o:['90°','180°','45°'],a:0},
+  {q:'量角时，量角器的中心要对准角的？',o:['顶点','一条边','任意位置'],a:0}],
+ sanwei:[{q:'145×12=？',o:['1740','1470','174'],a:0},
+  {q:'一个因数不变，另一个因数乘3，积？',o:['乘3','不变','加3'],a:0},
+  {q:'速度×时间=？',o:['路程','单价','工作效率'],a:0}],
+ pingxing:[{q:'同一平面内不相交的两条直线？',o:['互相平行','互相垂直','相交'],a:0},
+  {q:'只有一组对边平行的四边形是？',o:['梯形','平行四边形','长方形'],a:0},
+  {q:'平行四边形的对边？',o:['平行且相等','不平行','相等但不平行'],a:0}],
+ chuweishu2:[{q:'试商时如果余数比除数大，说明？',o:['商小了要调大','商大了要调小','正好'],a:0},
+  {q:'630÷70=？',o:['9','7','90'],a:0},
+  {q:'被除数和除数同时乘10，商？',o:['不变','乘10','除以10'],a:0}],
+ tiaoxing:[{q:'条形统计图能清楚看出？',o:['数量的多少','变化趋势','部分占整体的比例'],a:0},
+  {q:'一格表示10人，3格表示多少人？',o:['30人','300人','13人'],a:0},
+  {q:'画条形图时，直条的高度要和？',o:['数据的多少对应','随便画','颜色对应'],a:0}],
+ youhua:[{q:'沏茶时烧水8分钟，烧水的同时可以洗茶杯。怎样最省时间？',o:['同时做能同时做的事','一件一件慢慢做','先歇一会儿'],a:0},
+  {q:'锅一次能烙2张饼，两面各需1分钟，烙3张饼最少要几分钟？',o:['3分钟','4分钟','6分钟'],a:0},
+  {q:'优化安排的核心思想是？',o:['同时做互不影响的事','越快越好不用计划','让别人做'],a:0}],
+ sze:[{q:'计算 18÷(2+4)×3，第一步先算？',o:['2+4','18÷2','4×3'],a:0},
+  {q:'0能作除数吗？',o:['不能','能','有时能'],a:0},
+  {q:'18÷(2+4)×3=？',o:['9','12','1'],a:0}],
+ guancha2:[{q:'从正面看一个长方体，看到的形状是？',o:['长方形（或正方形）','圆','三角形'],a:0},
+  {q:'同一物体从不同方向看，形状？',o:['可能不同','一定相同','一定看不见'],a:0},
+  {q:'用4个小正方体搭成"L"形，从上面看到的形状是？',o:['L形','正方形','圆形'],a:0}],
+ dinglu:[{q:'25×(4+8) 用哪个定律简便计算？',o:['乘法分配律','加法结合律','乘法交换律'],a:0},
+  {q:'a+b=b+a 是？',o:['加法交换律','加法结合律','乘法分配律'],a:0},
+  {q:'计算 25×7×4，最简便的顺序是？',o:['先算25×4=100再乘7','先算25×7','从右往左算'],a:0}],
+ xiao2:[{q:'0.30 和 0.3 比，谁大？',o:['一样大','0.30大','0.3大'],a:0},
+  {q:'把 3.5 扩大到原来的100倍是？',o:['350','35','0.035'],a:0},
+  {q:'小数点右边第二位是？',o:['百分位','十分位','千分位'],a:0}],
+ sanjiao:[{q:'三角形的内角和是？',o:['180°','360°','90°'],a:0},
+  {q:'三角形两个角分别是50°和60°，第三个角是？',o:['70°','90°','110°'],a:0},
+  {q:'三根小棒长2、3、6厘米，能围成三角形吗？',o:['不能，因为2+3<6','能','不一定'],a:0}],
+ xiaojf:[{q:'小数加减法，什么要对齐？',o:['小数点','首位','末尾'],a:0},
+  {q:'3.5+2.4=？',o:['5.9','59','0.59'],a:0},
+  {q:'10−4.6=？',o:['5.4','6.4','5.6'],a:0}],
+ yundong2:[{q:'轴对称图形沿对称轴对折后，两边？',o:['完全重合','部分重合','不重合'],a:0},
+  {q:'字母 A、F、G 中，是轴对称图形的是？',o:['A','F','G'],a:0},
+  {q:'图形平移后，什么变了、什么不变？',o:['位置变，形状大小不变','形状变，位置不变','都变了'],a:0}],
+ pingjun:[{q:'平均数=？',o:['总数÷份数','总数×份数','最大数−最小数'],a:0},
+  {q:'3、5、7、9、6 这五个数的平均数是？',o:['6','5','7'],a:0},
+  {q:'前3次跳绳平均20个，第4次跳24个，4次的平均数是？',o:['21个','20个','22个'],a:0}],
+ jitu:[{q:'鸡兔同笼，共8个头26只脚，兔有几只？',o:['5只','3只','4只'],a:0},
+  {q:'假设全是鸡，算出的脚会比实际？',o:['少，因为兔有4只脚','多','不变'],a:0},
+  {q:'解鸡兔同笼最常用的方法是？',o:['假设法','量一量','猜一猜'],a:0}],
+ xiaocheng:[{q:'0.3×0.2=？',o:['0.06','0.6','0.02'],a:0},
+  {q:'1.5×4=？',o:['6','0.6','60'],a:0},
+  {q:'两个因数一共有3位小数，积（末尾不去0时）有几位小数？',o:['3位','2位','1位'],a:0}],
+ shudui:[{q:'数对(3,5)中的3表示？',o:['第3列','第3行','第3个'],a:0},
+  {q:'数对(2,7)表示的位置在？',o:['第2列第7行','第7列第2行','第9列第9行'],a:0},
+  {q:'同一列的两个点，它们的数对？',o:['第一个数相同','第二个数相同','两个数都不同'],a:0}],
+ xiaochu:[{q:'7.2÷0.8=？',o:['9','0.9','90'],a:0},
+  {q:'除数是小数时，先把除数变成什么再算？',o:['整数','分数','更大的小数'],a:0},
+  {q:'0.3333…是什么小数？',o:['循环小数','有限小数','整数'],a:0}],
+ keneng:[{q:'盒子里有5个红球1个白球，摸出一个，摸到什么球的可能性大？',o:['红球','白球','一样大'],a:0},
+  {q:'太阳明天从东方升起，是什么事件？',o:['一定','可能','不可能'],a:0},
+  {q:'公鸡下蛋，是什么事件？',o:['不可能','可能','一定'],a:0}],
+ fangcheng:[{q:'含有未知数的等式叫？',o:['方程','算式','公式'],a:0},
+  {q:'解方程 x+3=8，x=？',o:['5','11','24'],a:0},
+  {q:'方程 2x=10 的解是？',o:['x=5','x=20','x=8'],a:0}],
+ duobian:[{q:'三角形面积公式是？',o:['底×高÷2','底×高','底×高×2'],a:0},
+  {q:'平行四边形面积公式是？',o:['底×高','底×高÷2','底+高'],a:0},
+  {q:'梯形面积公式是？',o:['(上底+下底)×高÷2','上底+下底×高','上底×下底×高'],a:0}],
+ zhishu:[{q:'一条路100米，每5米栽一棵树（两端都栽），共栽几棵？',o:['21棵','20棵','19棵'],a:0},
+  {q:'两端都栽时，棵数和间隔数的关系是？',o:['棵数=间隔数+1','棵数=间隔数','棵数=间隔数−1'],a:0},
+  {q:'圆形池塘边栽树（首尾相接），棵数和间隔数？',o:['相等','相差1','相差2'],a:0}],
+ guancha3:[{q:'从正面看是3个小正方形横排，搭出的立体图形？',o:['不唯一，有多种搭法','只有一种','不可能搭出'],a:0},
+  {q:'只根据一个方向看到的形状，能确定立体图形吗？',o:['不能，需要多个方向','能完全确定','只能靠猜'],a:0},
+  {q:'从上面看小正方体搭的图形，能确定什么？',o:['底层的布局','总个数','最高处多高'],a:0}],
+ yinshu:[{q:'下面哪个数是质数？',o:['13','15','21'],a:0},
+  {q:'60 同时是2、3、5的倍数吗？',o:['是','不是','只是2的倍数'],a:0},
+  {q:'最小的合数是？',o:['4','2','1'],a:0}],
+ changfangti:[{q:'长方体有几个面、几条棱、几个顶点？',o:['6面12棱8顶点','4面8棱6顶点','8面6棱12顶点'],a:0},
+  {q:'长5宽4高3的长方体，体积是？',o:['60立方厘米','47立方厘米','12立方厘米'],a:0},
+  {q:'1立方分米等于多少立方厘米？',o:['1000','100','10000'],a:0}],
+ fen2:[{q:'把 4/8 约成最简分数是？',o:['1/2','2/8','2/4'],a:0},
+  {q:'3/4 和 5/6 通分，公分母用多少最简便？',o:['12','10','24'],a:0},
+  {q:'分数的基本性质：分子和分母同时？',o:['乘或除以相同的数（0除外），大小不变','加上相同的数','交换位置'],a:0}],
+ fenjf:[{q:'1/2+1/4=？',o:['3/4','2/6','1/8'],a:0},
+  {q:'异分母分数相加减，要先？',o:['通分','约分','化成整数'],a:0},
+  {q:'5/6−1/2=？',o:['1/3','1/2','2/5'],a:0}],
+ yundong3:[{q:'图形旋转由哪三要素决定？',o:['旋转中心、方向、角度','大小、颜色、位置','长短、高矮、快慢'],a:0},
+  {q:'风车转动是绕着？',o:['中心点旋转','直线平移','对称轴折叠'],a:0},
+  {q:'旋转后图形的？',o:['形状大小不变，位置变','形状变了','大小变了'],a:0}],
+ zhexian:[{q:'折线统计图最能看出？',o:['数量增减变化的趋势','每类数量的多少','部分占整体的比例'],a:0},
+  {q:'折线上升表示？',o:['数量在增加','数量在减少','没有变化'],a:0},
+  {q:'要表示一周气温的变化，选哪种图最合适？',o:['折线统计图','条形统计图','统计表'],a:0}],
+ zhaocipin:[{q:'9个零件中有1个偏轻的次品，用天平最少称几次保证找到？',o:['2次','3次','4次'],a:0},
+  {q:'找次品时，尽量把物品平均分成几份？',o:['3份','2份','4份'],a:0},
+  {q:'天平两边一样平时，次品在？',o:['不在天平上的那份里','左边','右边'],a:0}],
+ fencheng:[{q:'2/3 × 4 = ？',o:['8/3','6/3','2/12'],a:0},
+  {q:'1/2 × 1/3 = ？',o:['1/6','2/3','1/5'],a:0},
+  {q:'3吨的1/3是多少吨？',o:['1吨','3吨','9吨'],a:0}],
+ fangxiang2:[{q:'北偏东30°，是以哪个方向为基准？',o:['北','东','南'],a:0},
+  {q:'在图上确定物体的位置，需要哪两个条件？',o:['方向和距离','颜色和大小','时间和速度'],a:0},
+  {q:'南偏西45° 也可以说成？',o:['西偏南45°','北偏东45°','南偏东45°'],a:0}],
+ fenchu:[{q:'除以一个数（0除外）等于？',o:['乘这个数的倒数','除以它的倒数','减这个数'],a:0},
+  {q:'1/2 ÷ 1/4 = ？',o:['2','1/8','3/6'],a:0},
+  {q:'4/5 ÷ 2 = ？',o:['2/5','8/5','8/10'],a:0}],
+ bi:[{q:'比的基本性质：前项和后项？',o:['同乘或同除相同的数（0除外），比值不变','同时加相同的数','随便交换'],a:0},
+  {q:'化简比 6:9 = ？',o:['2:3','3:2','1:9'],a:0},
+  {q:'比号相当于除法中的什么？',o:['除号（也是分数线）','加号','括号'],a:0}],
+ yuan:[{q:'圆周率π是一个？',o:['无限不循环小数','有限小数','循环小数'],a:0},
+  {q:'半径2厘米的圆，面积是多少？',o:['12.56平方厘米','6.28平方厘米','12.56厘米'],a:0},
+  {q:'圆的位置由什么决定？',o:['圆心','半径','直径'],a:0}],
+ baifen:[{q:'25% 化成小数是？',o:['0.25','25','2.5'],a:0},
+  {q:'百分数表示？',o:['一个数是另一个数的百分之几','一百个数的总数','分数单位'],a:0},
+  {q:'0.4 化成百分数是？',o:['40%','4%','400%'],a:0}],
+ shanxing:[{q:'扇形统计图中，整个圆表示？',o:['总体（全部数量）','其中一个部分','一米的长度'],a:0},
+  {q:'扇形统计图能清楚看出？',o:['各部分占整体的百分比','变化趋势','每个具体数据'],a:0},
+  {q:'扇形的圆心角越大，这部分占的比例？',o:['越大','越小','没有关系'],a:0}],
+ shuyuxing:[{q:'1+3+5+7=？',o:['16','15','14'],a:0},
+  {q:'从1开始的连续奇数相加，和正好是？',o:['奇数个数的平方','奇数个数本身','最大的那个数'],a:0},
+  {q:'数与形结合，能帮我们？',o:['把抽象的规律看明白','画得更好看','不用动脑算得快'],a:0}],
+ fushu:[{q:'零下5℃记作？',o:['−5℃','5℃','0.5℃'],a:0},
+  {q:'0是正数还是负数？',o:['既不是正数也不是负数','正数','负数'],a:0},
+  {q:'−3 和 −8 哪个大？',o:['−3','−8','一样大'],a:0}],
+ baifen2:[{q:'打八折是什么意思？',o:['按原价的80%卖','便宜80%','原价再加80%'],a:0},
+  {q:'一件衣服原价100元，打七折后多少元？',o:['70元','30元','170元'],a:0},
+  {q:'利息=？',o:['本金×利率×时间','本金+利率','利率×时间'],a:0}],
+ yuanzhu:[{q:'圆柱的体积=？',o:['底面积×高','底面积×高÷3','底面周长×高'],a:0},
+  {q:'圆锥体积是等底等高圆柱的？',o:['三分之一','二分之一','相等'],a:0},
+  {q:'把圆柱的侧面沿高剪开展开，得到？',o:['长方形','圆形','三角形'],a:0}],
+ bili:[{q:'比例的基本性质：两个内项的积？',o:['等于两个外项的积','大于外项的积','小于外项的积'],a:0},
+  {q:'路程一定时，速度和时间成？',o:['反比例','正比例','不成比例'],a:0},
+  {q:'单价一定时，总价和数量成？',o:['正比例','反比例','不成比例'],a:0}],
+ gechao:[{q:'4支笔放进3个笔筒，总有一个笔筒至少放进几支？',o:['2支','1支','3支'],a:0},
+  {q:'5只鸽子飞进2个鸽巢，总有一个巢至少有几只？',o:['3只','2只','4只'],a:0},
+  {q:'鸽巢问题关键要考虑？',o:['最不利情况下至少是多少','运气好的情况','数清鸽子数量'],a:0}],
+ zongfx:[{q:'"圆的面积"属于哪个领域？',o:['图形与几何','数与代数','统计与概率'],a:0},
+  {q:'平均数用来？',o:['表示一组数据的整体水平','计算总数','找最大值'],a:0},
+  {q:'学完小学数学，最重要的是？',o:['把知识连成网，融会贯通','背熟所有公式','记住所有定义'],a:0}]
+};
+/* 口算类：每次进入小测都随机出新题、随机选项 */
+function ri(n){ return Math.floor(Math.random()*n); }
+function shuffled(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){ var j=ri(i+1); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function numQ(text, ans){
+  var vals=[ans, ans+1, ans+2];
+  var order=shuffled([0,1,2]);
+  return { q:text, o:order.map(function(k){ return ''+vals[k]; }), a:order.indexOf(0) };
+}
+var QGEN = {
+ ren15: function(){ /* 5以内加减 */
+   var out=[];
+   for(var k=0;k<3;k++){
+     var a,b,c;
+     if(k===2){ c=ri(3)+2; b=ri(c-1)+1; out.push(numQ(c+' − '+b+' = ？', c-b)); }
+     else{ a=ri(4)+1; b=ri(5-a)+1; out.push(numQ(a+' + '+b+' = ？', a+b)); }
+   }
+   return out;
+ },
+ ren610: function(){ /* 10以内加减 */
+   var out=[];
+   for(var k=0;k<3;k++){
+     var a,b,c;
+     if(k===2){ c=ri(4)+6; b=ri(c-5)+2; out.push(numQ(c+' − '+b+' = ？', c-b)); }
+     else{ a=ri(8)+2; b=ri(10-a)+1; out.push(numQ(a+' + '+b+' = ？', a+b)); }
+   }
+   return out;
+ },
+ jinwei: function(){ /* 20以内进位加 */
+   var out=[];
+   while(out.length<3){
+     var a=ri(8)+2, b=ri(8)+2;
+     if(a+b<11) continue;
+     out.push(numQ(a+' + '+b+' = ？', a+b));
+   }
+   return out;
+ },
+ tuiwei: function(){ /* 20以内退位减 */
+   var out=[];
+   while(out.length<3){
+     var c=11+ri(8), o=c%10, b=o+1+ri(9-o);
+     if(b>9) continue;
+     out.push(numQ(c+' − '+b+' = ？', c-b));
+   }
+   return out;
+ },
+ cheng2: function(){ /* 表内乘法 */
+   var out=[], used={};
+   while(out.length<3){
+     var a=ri(8)+2, b=ri(8)+2, key=a+'x'+b;
+     if(used[key]) continue; used[key]=1;
+     out.push(numQ(a+' × '+b+' = ？', a*b));
+   }
+   return out;
+ },
+ chu2: function(){ /* 表内除法 */
+   var out=[];
+   for(var k=0;k<3;k++){
+     var a=ri(8)+2, b=ri(8)+2;
+     out.push(numQ((a*b)+' ÷ '+a+' = ？', b));
+   }
+   return out;
+ }
+};
+
+/* ============ 布局常量 ============ */
+var W=172, H=46, PX=238, PY=66, MX=70, TOPY=118;
+var CW = MX + 11*PX + W + 70;
+var CH = TOPY + 9*PY + 56;
+
+var byId = {};
+N.forEach(function(n){ byId[n.i]=n; });
+var E = [];
+N.forEach(function(n){ n.p.forEach(function(pid){ E.push({a:byId[pid], b:n}); }); });
+/* children map */
+var kids = {};
+N.forEach(function(n){ kids[n.i]=[]; });
+E.forEach(function(e){ kids[e.a.i].push(e.b); });
+
+/* rows within semester */
+var rowsIn = {};
+N.forEach(function(n){
+  if(!rowsIn[n.s]) rowsIn[n.s]=0;
+  n.row = rowsIn[n.s]++;
+  n.x = MX + n.s*PX;
+  n.y = TOPY + n.row*PY;
+  n.cy = n.y + H/2;
+});
+
+/* ============ 状态 ============ */
+var state = {grade:null, domain:null, query:'', sel:null};
+var learned = {};
+try{ learned = JSON.parse(localStorage.getItem('xsxz-map')||'{}'); }catch(e){ learned={}; }
+function saveLearned(){ try{ localStorage.setItem('xsxz-map', JSON.stringify(learned)); }catch(e){} }
+/* 抽查记录：spotMiss[i] = 连续答错次数（答对清零，重新小测通过也清零） */
+var spotMiss = {};
+try{ spotMiss = JSON.parse(localStorage.getItem('xsxz-spot')||'{}'); }catch(e){ spotMiss={}; }
+function saveSpot(){ try{ localStorage.setItem('xsxz-spot', JSON.stringify(spotMiss)); }catch(e){} }
+function isShaky(n){ return !!(learned[n.i] && spotMiss[n.i]>=2); }
+
+/* ============ SVG 构建 ============ */
+var svg = document.getElementById('graph');
+var NS='http://www.w3.org/2000/svg';
+svg.setAttribute('viewBox','0 0 '+window.innerWidth+' '+window.innerHeight);
+function el(tag, attrs, parent){
+  var e=document.createElementNS(NS,tag);
+  for(var k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+var gBG=el('g',{}), gE=el('g',{}), gN=el('g',{});
+var world=el('g',{});
+world.appendChild(gBG); world.appendChild(gE); world.appendChild(gN);
+svg.appendChild(world);
+
+function hex(c){ return getComputedStyle(document.documentElement).getPropertyValue(c).trim(); }
+var COLS = {num:hex('--num'), geo:hex('--geo'), stat:hex('--stat'), prac:hex('--prac')};
+var BGS  = {num:hex('--num-bg'), geo:hex('--geo-bg'), stat:hex('--stat-bg'), prac:hex('--prac-bg')};
+
+/* 背景：年级条带 + 学期标签 + 隔列底色 */
+for(var s=0;s<12;s++){
+  if(s%2===1){ el('rect',{x:MX+s*PX-14, y:TOPY-34, width:W+28, height:CH-TOPY+34-20, class:'stripe'}, gBG); }
+}
+for(var g=0; g<6; g++){
+  var x1 = MX + (g*2)*PX - 14, x2 = MX + (g*2+1)*PX + W + 14;
+  el('rect',{x:x1, y:34, width:x2-x1, height:32, rx:8, class:'band'}, gBG);
+  var t=el('text',{x:(x1+x2)/2, y:50, 'text-anchor':'middle', class:'bandtxt'}, gBG);
+  t.textContent = GRADES[g];
+  [0,1].forEach(function(k){
+    var st=el('text',{x:MX+(g*2+k)*PX+W/2, y:TOPY-44, 'text-anchor':'middle', class:'semtxt'}, gBG);
+    st.textContent = SEMN[g*2+k];
+  });
+}
+
+/* 连线 */
+E.forEach(function(e, idx){
+  var a=e.a, b=e.b, d;
+  if(a.s < b.s){
+    var x1=a.x+W, y1=a.cy, x2=b.x, y2=b.cy, dx=(x2-x1)/2;
+    d = 'M'+x1+' '+y1+' C'+(x1+dx)+' '+y1+' '+(x2-dx)+' '+y2+' '+x2+' '+y2;
+  }else{
+    var bulge = 36 + 12*Math.abs(a.row-b.row);
+    d = 'M'+(a.x+W)+' '+a.cy+' C'+(a.x+W+bulge)+' '+a.cy+' '+(b.x+W+bulge)+' '+b.cy+' '+(b.x+W)+' '+b.cy;
+  }
+  var p = el('path',{d:d, class:'edge', 'data-a':a.i, 'data-b':b.i}, gE);
+  e.el = p;
+});
+
+/* 节点 */
+function estW(str, fs){
+  var w=0;
+  for(var i=0;i<str.length;i++){ w += str.charCodeAt(i)>255 ? fs : fs*0.56; }
+  return w;
+}
+N.forEach(function(n){
+  var g = el('g',{class:'node','data-id':n.i}, gN);
+  el('rect',{x:n.x, y:n.y, width:W, height:H, rx:10, fill:BGS[n.d], stroke:COLS[n.d], 'stroke-width':1.2, 'stroke-opacity':.75}, g);
+  var fs = estW(n.n, 13.5) > W-18 ? 11.5 : 13.5;
+  var t = el('text',{x:n.x+W/2, y:n.cy, 'text-anchor':'middle', 'font-size':fs, class:'nlabel'}, g);
+  t.textContent = n.n;
+  n.g = g; n.txt=t;
+  updateBadge(n);
+});
+function updateBadge(n){
+  if(n.badge){ n.g.removeChild(n.badge); n.badge=null; }
+  if(learned[n.i]){
+    var b = el('g',{class:'badge'}, n.g);
+    el('circle',{cx:n.x+W-9, cy:n.y+9, r:7.5, fill:'#1d2129'}, b);
+    var ck = el('text',{x:n.x+W-9, y:n.y+9.7, 'text-anchor':'middle', 'font-size':9, fill:'#fff'}, b);
+    ck.textContent='✓';
+    n.badge=b;
+  }
+  /* 虚掌握橙色提醒角标（抽查连续 2 次答错且未重测通过） */
+  if(isShaky(n)){
+    var f = el('g',{class:'warnflag'}, n.g);
+    el('path',{d:'M'+(n.x+1)+' '+(n.y+1)+' l13 0 l-13 13 z', fill:'#e8890c'}, f);
+    var wt = el('text',{x:n.x+4.6, y:n.y+11.4, 'font-size':9.5, 'font-weight':700, fill:'#fff'}, f);
+    wt.textContent='!';
+    n.warnflag=f;
+  }else if(n.warnflag){ n.g.removeChild(n.warnflag); n.warnflag=null; }
+}
+
+/* ============ 缩放平移 ============ */
+var view={k:1,tx:0,ty:0};
+function applyView(){
+  world.setAttribute('transform','translate('+view.tx+','+view.ty+') scale('+view.k+')');
+}
+function fit(){
+  var r=svg.getBoundingClientRect();
+  view.k = Math.min((r.width-30)/CW, (r.height-150)/CH, 1.15);
+  view.tx = (r.width - CW*view.k)/2;
+  view.ty = Math.max(18, (r.height - CH*view.k)/2) - 10;
+  applyView();
+}
+svg.addEventListener('wheel', function(ev){
+  ev.preventDefault();
+  var r=svg.getBoundingClientRect(), mx=ev.clientX-r.left, my=ev.clientY-r.top;
+  var f = ev.deltaY<0 ? 1.14 : 1/1.14;
+  var k2 = Math.min(2.2, Math.max(0.3, view.k*f));
+  view.tx = mx-(mx-view.tx)*k2/view.k;
+  view.ty = my-(my-view.ty)*k2/view.k;
+  view.k=k2; applyView();
+},{passive:false});
+
+var pan=null, moved=false;
+svg.addEventListener('pointerdown', function(ev){
+  pan={x:ev.clientX, y:ev.clientY, tx:view.tx, ty:view.ty}; moved=false;
+  // 注意：不能在这里 setPointerCapture——那会把后续 click 也重定向到 svg，
+  // 导致节点的 click 监听收不到事件（真实点击无反应）。改为只在真正拖动后捕获。
+});
+svg.addEventListener('pointermove', function(ev){
+  if(!pan) return;
+  var dx=ev.clientX-pan.x, dy=ev.clientY-pan.y;
+  if(Math.abs(dx)+Math.abs(dy)>5){
+    moved=true; svg.classList.add('panning');
+    if(pan.pointerId===undefined) pan.pointerId=ev.pointerId;
+    try{ svg.setPointerCapture(ev.pointerId); }catch(e){}
+  }
+  view.tx=pan.tx+dx; view.ty=pan.ty+dy; applyView();
+});
+svg.addEventListener('pointerup', function(ev){
+  if(pan && !moved){
+    if(ev.target === svg || ev.target.parentNode === gBG) clearSel();
+  }
+  try{ svg.releasePointerCapture(ev.pointerId); }catch(e){}
+  pan=null; svg.classList.remove('panning');
+});
+svg.addEventListener('pointercancel', function(ev){
+  try{ svg.releasePointerCapture(ev.pointerId); }catch(e){}
+  pan=null; svg.classList.remove('panning');
+});
+document.getElementById('zin').onclick=function(){ zoomCenter(1.25); };
+document.getElementById('zout').onclick=function(){ zoomCenter(1/1.25); };
+document.getElementById('zfit').onclick=fit;
+function zoomCenter(f){
+  var r=svg.getBoundingClientRect();
+  var k2=Math.min(2.2, Math.max(0.3, view.k*f));
+  var mx=r.width/2, my=r.height/2;
+  view.tx=mx-(mx-view.tx)*k2/view.k; view.ty=my-(my-view.ty)*k2/view.k; view.k=k2; applyView();
+}
+function centerNode(n){
+  var r=svg.getBoundingClientRect();
+  var k2=Math.max(view.k, 1);
+  view.k=k2;
+  view.tx = r.width/2 - (n.x+W/2)*k2;
+  view.ty = Math.max(20, r.height/2 - n.cy*k2);
+  applyView();
+}
+
+/* ============ 选择 / 过滤 ============ */
+function ancestors(id, set){
+  byId[id].p.forEach(function(pid){
+    if(!set[pid]){ set[pid]=1; ancestors(pid,set); }
+  });
+  return set;
+}
+function descendants(id, set){
+  kids[id].forEach(function(c){
+    if(!set[c.i]){ set[c.i]=1; descendants(c.i,set); }
+  });
+  return set;
+}
+function matches(n){
+  if(state.grade!==null && Math.floor(n.s/2)!==state.grade) return false;
+  if(state.domain!==null && n.d!==state.domain) return false;
+  if(state.query && n.n.indexOf(state.query)<0 && n.desc.indexOf(state.query)<0) return false;
+  return true;
+}
+function apply(){
+  var anyFilter = state.grade!==null || state.domain!==null || !!state.query;
+  var up={}, down={};
+  var road = state.road ? (state.roadSet||{}) : null;
+  if(state.sel && !road){ ancestors(state.sel.i,up); descendants(state.sel.i,down); }
+  N.forEach(function(n){
+    var cls='node';
+    if(road){
+      if(road[n.i]){ cls+=' onroad'; if(n.i===state.road) cls+=' sel'; }
+      else cls+=' dim';
+    }else{
+      var ok = matches(n);
+      if(anyFilter && !ok) cls+=' dim';
+      if(state.sel){
+        if(n.i===state.sel.i) cls+=' sel';
+        else if(up[n.i]) cls+=' up';
+        else if(down[n.i]) cls+=' down';
+        else cls+=' fade';
+      }
+    }
+    n.g.setAttribute('class', cls);
+  });
+  E.forEach(function(e){
+    var cls='edge';
+    if(road){
+      if(road[e.a.i] && road[e.b.i]) cls+=' onroad';
+      else cls+=' dim';
+    }else{
+      var okA=matches(e.a), okB=matches(e.b);
+      if(anyFilter && !(okA&&okB)) cls+=' dim';
+      if(state.sel){
+        var aIn = e.a.i===state.sel.i || up[e.a.i];
+        var bIn = e.b.i===state.sel.i || up[e.b.i];
+        var aDn = e.a.i===state.sel.i || down[e.a.i];
+        var bDn = e.b.i===state.sel.i || down[e.b.i];
+        if(aIn&&bIn) cls+=' up';
+        else if(aDn&&bDn) cls+=' down';
+        else cls+=' fade';
+      }
+    }
+    e.el.setAttribute('class', cls);
+  });
+  updateProgress();
+}
+function updateProgress(){
+  var c=0; N.forEach(function(n){ if(learned[n.i])c++; });
+  document.getElementById('pl').textContent='已掌握 '+c+' / '+N.length;
+  document.getElementById('pfill').style.width=(c/N.length*100)+'%';
+}
+
+/* ============ 面板 ============ */
+var panel=document.getElementById('panel');
+function kchip(n){
+  var b=document.createElement('button');
+  b.className='kchip';
+  var d=document.createElement('span'); d.className='kdot'; d.style.background=COLS[n.d];
+  var s=document.createElement('span'); s.textContent=n.n;
+  var sm=document.createElement('small'); sm.textContent=SEMN[n.s];
+  b.appendChild(d); b.appendChild(s); b.appendChild(sm);
+  b.onclick=function(){ select(n, false); };
+  return b;
+}
+function select(n, center){
+  state.sel=n;
+  state.road=null; state.roadSet=null;
+  QSTATE=null; SPOT=null; /* 切换知识点时中止进行中的小测/抽查 */
+  renderPanel(n);
+  panel.classList.add('open');
+  if(center) centerNode(n);
+  apply();
+}
+function renderPanel(n){
+  document.getElementById('pname').textContent=n.n;
+  document.getElementById('pdetails').style.display='';
+  document.getElementById('roadbox').style.display='none';
+  document.getElementById('quizbox').style.display='none';
+  document.getElementById('quizbox').innerHTML='';
+  var rsec=document.getElementById('proadsec');
+  rsec.style.display = learned[n.i] ? 'none' : 'block';
+  var tags=document.getElementById('ptags'); tags.innerHTML='';
+  var t1=document.createElement('span'); t1.className='tag'; t1.style.background='#eef1f5'; t1.style.color='#4a5160'; t1.textContent=SEMF[n.s];
+  var t2=document.createElement('span'); t2.className='tag'; t2.style.background=BGS[n.d]; t2.style.color=COLS[n.d]; t2.textContent=DOM[n.d].name;
+  tags.appendChild(t1); tags.appendChild(t2);
+  document.getElementById('pdesc').textContent=n.desc;
+  var tip=document.getElementById('ptip');
+  if(n.t){ tip.style.display='block'; tip.innerHTML='<b>要点</b> · '+n.t.replace(/</g,'&lt;'); }
+  else tip.style.display='none';
+  var pre=document.getElementById('ppre'); pre.innerHTML='';
+  if(n.p.length){ n.p.forEach(function(pid){ pre.appendChild(kchip(byId[pid])); }); }
+  else pre.innerHTML='<span class="none">这是起点，没有前置知识</span>';
+  var nx=document.getElementById('pnext'); nx.innerHTML='';
+  if(kids[n.i].length){ kids[n.i].forEach(function(c){ nx.appendChild(kchip(c)); }); }
+  else nx.innerHTML='<span class="none">暂时没有后续，它支撑着综合运用</span>';
+  var wb=document.getElementById('pwarn');
+  if(isShaky(n)){
+    wb.style.display='block';
+    wb.innerHTML='<b>⚠ 连续 '+spotMiss[n.i]+' 次抽查答错</b><br>这个勾可能打早了。建议先回教材重学，再点下方按钮重新小测——通过后提醒自动消失。';
+  }else wb.style.display='none';
+  renderLearnBtn();
+}
+function clearSel(){
+  state.sel=null; state.road=null; state.roadSet=null; QSTATE=null; SPOT=null;
+  panel.classList.remove('open'); apply();
+}
+function renderLearnBtn(n){
+  var b=document.getElementById('plearn'), n=state.sel;
+  var u=document.getElementById('punlearn');
+  if(!n) return;
+  if(learned[n.i]){ b.textContent='✓ 已掌握（点击重新小测）'; b.classList.add('done'); u.style.display='block'; }
+  else{ b.textContent='开始小测 · 3 题全对才算掌握'; b.classList.remove('done'); u.style.display='none'; }
+}
+document.getElementById('punlearn').onclick=function(){
+  if(!state.sel) return;
+  unmarkLearned(state.sel);
+  renderLearnBtn();
+  document.getElementById('proadsec').style.display='block';
+};
+/* ============ 掌握小测 ============ */
+var QSTATE=null; /* {node, qs:[题目], idx, wrongs} */
+function getQuiz(n){
+  var gen = QGEN[n.i];
+  if(gen) return gen();
+  return (QZ[n.i]||[]).slice();
+}
+function startQuiz(n){
+  var qs = getQuiz(n);
+  if(!qs || !qs.length){ markLearned(n); return; } /* 无题库则退回直接标记（不应发生） */
+  QSTATE = { node:n, qs: qs, idx:0, wrongs:0 };
+  document.getElementById('pdetails').style.display='none';
+  document.getElementById('proadsec').style.display='none';
+  document.getElementById('quizbox').style.display='block';
+  document.getElementById('quizbox').innerHTML='';
+  renderQuiz();
+}
+function renderQuiz(){
+  var s=QSTATE; if(!s) return;
+  var box=document.getElementById('quizbox');
+  if(s.idx>=s.qs.length){ finishQuiz(); return; } /* 全部答完 */
+  var qq=s.qs[s.idx];
+  /* 渲染时选项顺序打乱 */
+  var order=shuffled([0,1,2]);
+  var html='<div class="quizhead"><span class="qt">掌握小测 · '+s.node.n+'</span><span class="qprog">第 '+(s.idx+1)+' / '+s.qs.length+' 题</span></div>';
+  html+='<div class="qtext">'+esc(qq.q)+'</div><div class="qopts">';
+  order.forEach(function(k,i){
+    html+='<button class="qopt" data-k="'+k+'">'+esc(qq.o[k])+'</button>';
+  });
+  html+='</div><div class="qfeed" id="qfeed"></div>';
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll('.qopt'),function(btn){
+    btn.onclick=function(){ pickOpt(btn, qq); };
+  });
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function pickOpt(btn, qq){
+  var s=QSTATE; if(!s) return;
+  var k=parseInt(btn.getAttribute('data-k'),10);
+  var opts=document.getElementById('quizbox').querySelectorAll('.qopt');
+  var correct = (k===qq.a);
+  Array.prototype.forEach.call(opts, function(b){
+    b.disabled=true;
+    var bk=parseInt(b.getAttribute('data-k'),10);
+    if(bk===qq.a) b.classList.add('right');
+  });
+  if(correct){
+    document.getElementById('qfeed').innerHTML='<span class="ok">✓ 答对了</span>';
+    var mine=QSTATE;
+    setTimeout(function(){
+      if(QSTATE!==mine) return; /* 用户已切换知识点或退出小测 */
+      QSTATE.idx++;
+      if(QSTATE.idx>=QSTATE.qs.length) finishQuiz();
+      else renderQuiz();
+    }, 650);
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('qfeed').innerHTML='<span class="no">✗ 差一点。3 题一轮全对才算，重新开始吧</span><button class="retrybtn" id="qretry">重新小测</button>';
+    var rb=document.getElementById('qretry');
+    rb.onclick=function(){ startQuiz(s.node); };
+    QSTATE=null;
+  }
+}
+function finishQuiz(){
+  var s=QSTATE; if(!s) return;
+  QSTATE=null;
+  markLearned(s.node);
+  var box=document.getElementById('quizbox');
+  box.innerHTML='<div class="passtoast">🎉 3 题全对！「'+esc(s.node.n)+'」已标记掌握</div>'+
+    '<div class="quizhead" style="margin-top:64px"><span class="qt">掌握小测 · '+esc(s.node.n)+'</span></div>'+
+    '<p class="qtext" style="color:#1f7a47;font-weight:600">小测通过！</p>'+
+    '<p style="font-size:13px;color:#3a4150;line-height:1.7">「'+esc(s.node.n)+'」已打勾。想保持手感，隔两周可以回来重新小测一次。</p>'+
+    '<button id="qback" class="qopt" style="text-align:center">回到详情</button>';
+  document.getElementById('qback').onclick=function(){ backToDetails(); };
+}
+function backToDetails(){
+  document.getElementById('quizbox').style.display='none';
+  document.getElementById('quizbox').innerHTML='';
+  if(state.sel){ renderPanel(state.sel); document.getElementById('pdetails').style.display=''; }
+  else { document.getElementById('panel').classList.remove('backdrop'); }
+}
+function markLearned(n){
+  learned[n.i]=1; saveLearned();
+  delete spotMiss[n.i]; saveSpot(); /* 重新小测通过 = 真会了，清虚掌握记录（须在 updateBadge 前） */
+  updateBadge(n); updateProgress();
+  if(state.sel && state.sel.i===n.i){ renderPanel(state.sel); document.getElementById('pdetails').style.display=''; }
+  if(state.road) refreshRoad();
+}
+function unmarkLearned(n){
+  delete learned[n.i]; delete spotMiss[n.i]; saveLearned(); saveSpot(); updateBadge(n); updateProgress();
+}
+document.getElementById('plearn').onclick=function(){
+  if(!state.sel) return;
+  startQuiz(state.sel);
+};
+/* ============ 突击抽查 ============ */
+var SPOT=null; /* {qs:[{node,q}], idx, right} */
+document.getElementById('pspot').onclick=startSpot;
+function miniToast(msg){
+  var t=document.createElement('div'); t.className='mini-toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2200);
+}
+function startSpot(){
+  if(SPOT && !SPOT.done && !confirm('抽查进行中，重新开一轮吗？')) return;
+  var pool=N.filter(function(n){ return learned[n.i]; });
+  if(pool.length===0){ miniToast('还没有已掌握的知识点，先去打几个勾吧'); return; }
+  var pick=shuffled(pool).slice(0,5);
+  SPOT={ qs: pick.map(function(n){
+      var q=getQuiz(n); q=shuffled(q);
+      return { node:n, q:q[0] };
+    }), idx:0, right:0, done:false };
+  state.sel=null; state.road=null; state.roadSet=null; QSTATE=null;
+  panel.classList.remove('open');
+  apply();
+  renderSpot();
+}
+function renderSpot(){
+  var s=SPOT;
+  var box=document.getElementById('quizbox');
+  panel.classList.add('open');
+  document.getElementById('ptags').innerHTML='';
+  document.getElementById('pname').textContent='突击抽查';
+  document.getElementById('pdetails').style.display='none';
+  document.getElementById('proadsec').style.display='none';
+  document.getElementById('roadbox').style.display='none';
+  document.getElementById('roadbox').innerHTML='';
+  box.style.display='block';
+  if(s.idx>=s.qs.length){ finishSpot(); return; }
+  var cur=s.qs[s.idx];
+  var qq=cur.q;
+  var order=shuffled([0,1,2]);
+  var html='<div class="quizhead"><span class="qt">突击抽查 · 第 '+(s.idx+1)+' / '+s.qs.length+' 题</span><span class="qprog">已对 '+s.right+' 题</span></div>';
+  html+='<div class="spotfrom">来自「'+esc(cur.node.n)+'」（'+SEMN[cur.node.s]+' · '+DOM[cur.node.d].name+'）</div>';
+  html+='<div class="qtext">'+esc(qq.q)+'</div><div class="qopts">';
+  order.forEach(function(k){ html+='<button class="qopt" data-k="'+k+'">'+esc(qq.o[k])+'</button>'; });
+  html+='</div><div class="qfeed" id="qfeed"></div>';
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll('.qopt'),function(btn){
+    btn.onclick=function(){ pickSpot(btn, qq); };
+  });
+}
+function pickSpot(btn, qq){
+  var s=SPOT; if(!s || s.done) return;
+  var k=parseInt(btn.getAttribute('data-k'),10);
+  var opts=document.querySelectorAll('#quizbox .qopt');
+  var correct=(k===qq.a);
+  Array.prototype.forEach.call(opts, function(b){
+    b.disabled=true;
+    var bk=parseInt(b.getAttribute('data-k'),10);
+    if(bk===qq.a) b.classList.add('right');
+  });
+  var feed=document.getElementById('qfeed');
+  var cnode=s.qs[s.idx].node;
+  s.qs[s.idx].ok=correct; /* 记进成绩单 */
+  /* 虚掌握记账：答对清零；答错 +1（不动勾） */
+  if(correct){ delete spotMiss[cnode.i]; }
+  else{ spotMiss[cnode.i]=(spotMiss[cnode.i]||0)+1; }
+  saveSpot();
+  updateBadge(cnode);
+  if(correct){
+    s.right++;
+    feed.innerHTML='<span class="ok">✓ 答对了</span>';
+    var mine=SPOT;
+    setTimeout(function(){
+      if(SPOT!==mine || SPOT.done) return;
+      SPOT.idx++;
+      renderSpot();
+    }, 650);
+  }else{
+    btn.classList.add('wrong');
+    feed.innerHTML='<span class="no">✗ 答错了</span><span style="font-size:11.5px;color:#9aa1ac">（抽查不打勾也不取消勾，只看真不真会）</span>';
+    var mine=SPOT;
+    setTimeout(function(){
+      if(SPOT!==mine || SPOT.done) return; /* 用户已退出抽查 */
+      midGoSpot();
+    }, 1400);
+  }
+}
+function midGoSpot(){ SPOT.idx++; renderSpot(); }
+function finishSpot(){
+  SPOT.done=true;
+  var s=SPOT;
+  var box=document.getElementById('quizbox');
+  var total=s.qs.length, right=s.right;
+  var head='<div class="quizhead"><span class="qt">突击抽查 · 成绩单</span><span class="qprog">已对 '+right+' / '+total+' 题</span></div>';
+  var msg;
+  if(right===total){ msg='🎉 全对！学得很扎实，保持！'; }
+  else if(right>=total-2){ msg='还不错。错的知识点建议回炉重测一遍。'; }
+  else{ msg='错的有点多，建议把错题知识点重学一下，两周后再抽查一次。'; }
+  var html=head+'<p class="qtext" style="font-weight:600">'+msg+'</p>';
+  html+='<div class="qopts">';
+  s.qs.forEach(function(x){
+    var flag = (!x.ok && spotMiss[x.node.i]>=2) ? '<small style="color:#c07a10;font-weight:700">⚠ 已标记为待巩固</small>' : '';
+    html+='<button class="qopt spotret" data-id="'+x.node.i+'" data-ok="'+(x.ok?1:0)+'">'+(x.ok?'✓ ':'✗ ')+esc(x.node.n)+'<small style="color:#9aa1ac;font-weight:400">（'+SEMN[x.node.s]+'）</small>'+flag+'</button>';
+  });
+  html+='</div>';
+  html+='<p style="font-size:12.5px;color:#7c828d;line-height:1.7">点上面的知识点可回到图谱继续学 · 点错的会自动打开它的小测</p>';
+  html+='<button id="spotclose" class="qopt" style="text-align:center">结束抽查</button>';
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll('.spotret'),function(b){
+    b.onclick=function(){
+      var n=byId[b.getAttribute('data-id')];
+      SPOT=null;
+      if(b.getAttribute('data-ok')==='0'){
+        clearSel(); select(n,false); startQuiz(n);
+      }else{
+        clearSel(); select(n,false);
+      }
+    };
+  });
+  document.getElementById('spotclose').onclick=function(){
+    SPOT=null; clearSel();
+  };
+}
+/* ============ 学习路线模式 ============ */
+document.getElementById('pmkroad').onclick=function(){ if(state.sel) buildRoad(state.sel); };
+function buildRoad(n){
+  state.road=n.i;
+  var anc={}; ancestors(n.i,anc);
+  var set={}; set[n.i]=1;
+  for(var k in anc) set[k]=1;
+  state.roadSet=set;
+  document.getElementById('pdetails').style.display='none';
+  document.getElementById('proadsec').style.display='none';
+  var box=document.getElementById('roadbox'); box.style.display='block';
+  var all=Object.keys(set).map(function(id){ return byId[id]; });
+  var todo=all.filter(function(m){ return !learned[m.i]; });
+  todo.sort(function(a,b){ return (a.s-b.s)||(a.row-b.row); });
+  var done=all.length-todo.length;
+  var html='';
+  if(learned[n.i]){
+    html+='<div class="roadhead">🎉 「'+n.n+'」已经掌握！</div>';
+    html+='<div class="roadmeta">路线完成。退出后点击它，可以看看接下来能学什么。</div>';
+  }else{
+    html+='<div class="roadhead">补齐这 '+todo.length+' 步，就能学会「'+n.n+'」</div>';
+    if(done>0) html+='<div class="roadmeta">✓ 已具备 '+done+' 个基础，自动跳过</div>';
+    html+='<div class="roadlist">';
+    todo.forEach(function(m,idx){
+      var isT=(m.i===n.i), isFirst=(idx===0 && !isT);
+      var cls='step'+(isT?' target':'')+(isFirst?' now':'');
+      var flag=isT?'★ 目标':(isFirst?'现在学':'');
+      html+='<div class="'+cls+'" data-id="'+m.i+'"><span class="sno">'+(idx+1)+'</span><span class="sname">'+m.n+'</span>'+(flag?'<span class="sflag">'+flag+'</span>':'')+'<small>'+SEMN[m.s]+'</small></div>';
+    });
+    html+='</div>';
+  }
+  html+='<button id="pexitroad">退出路线模式</button>';
+  box.innerHTML=html;
+  Array.prototype.forEach.call(box.querySelectorAll('.step'),function(el){
+    el.onclick=function(){ centerNode(byId[el.getAttribute('data-id')]); };
+  });
+  document.getElementById('pexitroad').onclick=exitRoad;
+  apply();
+}
+function exitRoad(){
+  state.road=null; state.roadSet=null;
+  var box=document.getElementById('roadbox'); box.style.display='none'; box.innerHTML='';
+  if(state.sel) renderPanel(state.sel);
+  apply();
+}
+function refreshRoad(){ if(state.road) buildRoad(byId[state.road]); }
+document.getElementById('pclose').onclick=clearSel;
+document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') clearSel(); });
+
+N.forEach(function(n){
+  n.g.addEventListener('click',function(){
+    if(moved) return;
+    if(state.road){
+      if(state.roadSet && state.roadSet[n.i]){ centerNode(n); return; }
+      exitRoad();
+    }
+    select(n,false);
+  });
+  n.g.addEventListener('dblclick',function(){
+    /* 双击 = 快速进入该知识点的小测（已掌握的重新测，不再直接取消勾） */
+    select(n,false);
+    startQuiz(n);
+  });
+});
+
+/* ============ 筛选控件 ============ */
+var gradeChips=document.getElementById('gradeChips');
+var gcAll=mkChip('全部年级', null, 'grade');
+[0,1,2,3,4,5].forEach(function(g){ mkChip(GRADES[g], g, 'grade'); });
+var domainChips=document.getElementById('domainChips');
+mkChip('全部领域', null, 'domain');
+['num','geo','stat','prac'].forEach(function(d){
+  mkChip(DOM[d].name, d, 'domain', COLS[d]);
+});
+function mkChip(label, val, kind, color){
+  var host = kind==='grade'?gradeChips:domainChips;
+  var c=document.createElement('div'); c.className='chip';
+  if(color){ var dt=document.createElement('span'); dt.className='cdot'; dt.style.background=color; c.appendChild(dt); }
+  var sp=document.createElement('span'); sp.textContent=label; c.appendChild(sp);
+  c.onclick=function(){
+    if(kind==='grade'){ state.grade = (state.grade===val && val!==null) ? null : val; if(val===null) state.grade=null; }
+    else{ state.domain = (state.domain===val && val!==null) ? null : val; if(val===null) state.domain=null; }
+    var host2 = kind==='grade'?gradeChips:domainChips;
+    Array.prototype.forEach.call(host2.children,function(ch,i){
+      var v = i===0 ? null : (kind==='grade' ? i-1 : ['num','geo','stat','prac'][i-1]);
+      ch.classList.toggle('on', (kind==='grade'?state.grade:state.domain)===v);
+    });
+    apply();
+  };
+  host.appendChild(c);
+  return c;
+}
+gradeChips.children[0].classList.add('on');
+domainChips.children[0].classList.add('on');
+
+var q=document.getElementById('q');
+q.addEventListener('input',function(){
+  state.query=q.value.trim();
+  var c=0; N.forEach(function(n){ if(matches(n)) c++; });
+  document.getElementById('qcount').textContent = state.query ? c+' 个匹配' : '';
+  apply();
+});
+q.addEventListener('keydown',function(ev){
+  if(ev.key==='Enter'){
+    var first=null;
+    for(var i=0;i<N.length;i++){ if(matches(N[i])){ first=N[i]; break; } }
+    if(first){ select(first,true); panel.classList.add('open'); }
+  }
+});
+document.getElementById('reset').onclick=function(){
+  if(confirm('确定清空所有「已掌握」标记吗？')){
+    learned={}; spotMiss={}; saveLearned(); saveSpot();
+    N.forEach(updateBadge);
+    if(state.sel) renderLearnBtn();
+    if(state.road) refreshRoad();
+    apply();
+  }
+};
+
+/* ============ 启动 ============ */
+document.getElementById('subtitle').textContent =
+  '人教版 · 一至六年级 · '+N.length+' 个知识点 · '+E.length+' 条前后衔接 · 点击知识点看「来龙去脉」';
+updateProgress();
+fit();
+apply();
+window.addEventListener('resize', function(){ svg.setAttribute('viewBox','0 0 '+window.innerWidth+' '+window.innerHeight); });
+</script>
+</body>
+</html>
