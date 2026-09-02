@@ -828,7 +828,7 @@ N.forEach(function(n){
   var g = el('g',{class:'node','data-id':n.i}, gN);
   el('rect',{x:n.x, y:n.y, width:W, height:H, rx:10, fill:BGS[n.d], stroke:COLS[n.d], 'stroke-width':1.2, 'stroke-opacity':.75}, g);
   var fs = estW(n.n, 13.5) > W-18 ? 11.5 : 13.5;
-  var t = el('text',{x:n.x+W/2, y:n.cy, 'text-anchor':'middle', 'font-size':fs, class:'nlabel'}, g);
+  var t = el('text',{x:n.x+W/2, y:n.cy+fs*0.36, 'text-anchor':'middle', 'font-size':fs, class:'nlabel'}, g);
   t.textContent = n.n;
   n.g = g; n.txt=t;
   updateBadge(n);
